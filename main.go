@@ -1,35 +1,35 @@
 package main
 
 import (
-	"GraphQL_viola/violacheckroot"
-	"GraphQL_viola/violaconfig"
-	"GraphQL_viola/violagraphql"
-	"GraphQL_viola/violalogger"
-	"GraphQL_viola/violamysql"
+	"hcc/viola/checkroot"
+	"hcc/viola/config"
+	"hcc/viola/graphql"
+	"hcc/viola/logger"
+	"hcc/viola/mysql"
 	"net/http"
 )
 
 func main() {
-	if !violacheckroot.CheckRoot() {
+	if !checkroot.CheckRoot() {
 		return
 	}
 
-	if !violalogger.Prepare() {
+	if !logger.Prepare() {
 		return
 	}
-	defer violalogger.FpLog.Close()
+	defer logger.FpLog.Close()
 
-	err := violamysql.Prepare()
+	err := mysql.Prepare()
 	if err != nil {
 		return
 	}
-	defer violamysql.Db.Close()
+	defer mysql.Db.Close()
 
-	http.Handle("/graphql", violagraphql.GraphqlHandler)
+	http.Handle("/graphql", graphql.GraphqlHandler)
 
-	violalogger.Logger.Println("Server is running on port " + violaconfig.HTTPPort)
-	err = http.ListenAndServe(":"+violaconfig.HTTPPort, nil)
+	logger.Logger.Println("Server is running on port " + config.HTTPPort)
+	err = http.ListenAndServe(":"+config.HTTPPort, nil)
 	if err != nil {
-		violalogger.Logger.Println("Failed to prepare http server!")
+		logger.Logger.Println("Failed to prepare http server!")
 	}
 }
