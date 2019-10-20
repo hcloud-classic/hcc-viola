@@ -3,16 +3,17 @@ package graphql
 import (
 	"errors"
 	"fmt"
-	"github.com/graphql-go/graphql"
-	"hcc/viola/config"
-	"hcc/viola/logger"
+	"hcc/viola/lib/config"
+	"hcc/viola/lib/logger"
+	"hcc/viola/lib/uuidgen"
 	"hcc/viola/mysql"
 	"hcc/viola/types"
-	"hcc/viola/uuidgen"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/graphql-go/graphql"
 )
 
 // CheckServerUUID : Check if server UUID is exist in violin server module
