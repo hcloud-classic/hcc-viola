@@ -1,13 +1,15 @@
 package main
 
 import (
+	"fmt"
 	"hcc/viola/lib/logger"
+	"strings"
 )
 
 func main() {
-	if !syscheck.CheckRoot() {
-		return
-	}
+	// if !syscheck.CheckRoot() {
+	// 	return
+	// }
 
 	if !logger.Prepare() {
 		return
@@ -27,9 +29,9 @@ func main() {
 	// if err != nil {
 	// 	logger.Logger.Println("Failed to prepare http server!")
 	// }
+	// controlcli.HccCLI("nodes", "status")
+	wwqwe := strings.Split("krgadm nodes add -n 2", " ")
 
+	fmt.Println(wwqwe[1])
 
-
-
-	
 }
