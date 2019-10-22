@@ -1,9 +1,9 @@
 package main
 
 import (
-	"fmt"
+	"hcc/viola/action/rabbitmq"
+	"hcc/viola/lib/config"
 	"hcc/viola/lib/logger"
-	"strings"
 )
 
 func main() {
@@ -16,11 +16,18 @@ func main() {
 	}
 	defer logger.FpLog.Close()
 
-	// err := mysql.Prepare()
-	// if err != nil {
-	// 	return
-	// }
-	// defer mysql.Db.Close()
+	config.Parser()
+
+	err := rabbitmq.PrepareChannel()
+	if err != nil {
+		logger.Logger.Panic(err)
+	}
+	defer func() {
+		_ = rabbitmq.Channel.Close()
+	}()
+	defer func() {
+		_ = rabbitmq.Connection.Close()
+	}()
 
 	// http.Handle("/graphql", graphql.GraphqlHandler)
 
@@ -29,9 +36,10 @@ func main() {
 	// if err != nil {
 	// 	logger.Logger.Println("Failed to prepare http server!")
 	// }
-	// controlcli.HccCLI("nodes", "status")
-	wwqwe := strings.Split("krgadm nodes add -n 2", " ")
 
-	fmt.Println(wwqwe[1])
+	forever := make(chan bool)
+
+	logger.Logger.Println(" [*] Waiting for messages. To exit press Ctrl+C")
+	<-forever
 
 }

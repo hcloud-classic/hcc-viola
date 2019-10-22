@@ -7,3 +7,31 @@
 ## CLI
 
 krgadm
+
+
+
+
+
+## conf
+
+```shell
+[http]
+port 7000
+
+[rabbitmq]
+rabbitmq_id admin
+rabbitmq_password qwe1212!Q
+rabbitmq_address 192.168.110.13
+rabbitmq_port 5672
+
+[harp]
+harp_server_address 192.168.110.10
+harp_server_port 7400
+harp_request_timeout_ms 5000
+
+
+```
+### rabiitmq
+
+웹접속 포트 : 15672
+

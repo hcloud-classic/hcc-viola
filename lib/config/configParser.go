@@ -1,12 +1,13 @@
 package config
 
 import (
+	"hcc/viola/lib/logger"
+
 	"github.com/Terry-Mao/goconf"
-	"hcc/harp/lib/logger"
 )
 
 var conf = goconf.New()
-var config = harpConfig{}
+var config = violaConfig{}
 var err error
 
 func parseHTTP() {

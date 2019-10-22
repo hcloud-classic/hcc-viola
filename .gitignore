@@ -5,3 +5,6 @@ goreport_grade
 .idea
 
 nohup.out
+
+./vendor/*
+go.mod
