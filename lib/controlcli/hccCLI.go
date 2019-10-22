@@ -7,10 +7,6 @@ import (
 	"strings"
 )
 
-<<<<<<< HEAD
-// HccCLI :
-func HccCLI(area string, action string) {
-=======
 //ParedAction : action parser struct
 type ParedAction struct {
 	area        string
@@ -18,7 +14,6 @@ type ParedAction struct {
 	scope       []string
 	rangeoption bool
 }
->>>>>>> feature/command
 
 var tokenaction ParedAction
 var nodemap map[string]string
