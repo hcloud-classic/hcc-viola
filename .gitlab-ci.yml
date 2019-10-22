@@ -48,10 +48,10 @@ build:
   stage: build
   script:
     - gmake
-    - sudo ezjail-admin stop viola
-    - sudo cp $PWD/viola /usr/jails/basejail/bin/
-    - sudo chmod 755 /usr/jails/basejail/bin/viola
-    - sudo ezjail-admin start viola &
+    - sudo /usr/sbin/service viola stop
+    - sudo cp $PWD/viola /bin/viola
+    - sudo chmod 755 /bin/viola
+    - sudo /usr/sbin/service viola start
     - echo "Finished"
 #  only:
 #  - master

@@ -2,8 +2,9 @@ package rabbitmq
 
 import (
 	"encoding/json"
-	"github.com/streadway/amqp"
 	"hcc/viola/lib/logger"
+
+	"github.com/streadway/amqp"
 )
 
 // XXXX : xxx

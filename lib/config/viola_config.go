@@ -2,12 +2,12 @@ package config
 
 import "github.com/Terry-Mao/goconf"
 
-var configLocation = "/etc/harp/harp.conf"
+var configLocation = "/etc/viola/viola.conf"
 
-type harpConfig struct {
-	MysqlConfig    *goconf.Section
+type violaConfig struct {
 	HTTPConfig     *goconf.Section
 	RabbitMQConfig *goconf.Section
+	ViolinConfig   *goconf.Section
 }
 
 /*-----------------------------------

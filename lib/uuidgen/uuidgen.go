@@ -1,8 +1,9 @@
 package uuidgen
 
 import (
-	uuid "github.com/nu7hatch/gouuid"
 	"hcc/viola/lib/logger"
+
+	uuid "github.com/nu7hatch/gouuid"
 )
 
 // Uuidgen : Generate uuid

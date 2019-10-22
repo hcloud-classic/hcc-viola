@@ -6,3 +6,6 @@ goreport_grade
 /vendor
 /_venodr-*
 nohup.out
+
+./vendor/*
+go.mod
