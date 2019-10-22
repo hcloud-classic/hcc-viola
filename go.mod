@@ -4,6 +4,7 @@ go 1.12
 
 require (
 	github.com/Terry-Mao/goconf v0.0.0-20161115082538-13cb73d70c44
+	github.com/gojp/goreportcard v0.0.0-20191001233754-41818f5fd295 // indirect
 	github.com/graphql-go/graphql v0.7.8
 	github.com/graphql-go/handler v0.2.3
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d

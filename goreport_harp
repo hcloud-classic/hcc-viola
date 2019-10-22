@@ -1,0 +1,12 @@
+Grade: A+ (98.9%)
+Files: 33
+Issues: 1
+gofmt: 96%
+	action/rabbitmq/publisher.go
+		Line 1: warning: file is not gofmted with -s (gofmt)
+go_vet: 100%
+gocyclo: 100%
+golint: 100%
+ineffassign: 100%
+license: 100%
+misspell: 100%

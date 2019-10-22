@@ -1,5 +1,7 @@
 github.com/Terry-Mao/goconf v0.0.0-20161115082538-13cb73d70c44 h1:oyRla0cRmia52TlmuLp1lDysM39D0gt5xmoUU6YFfGk=
 github.com/Terry-Mao/goconf v0.0.0-20161115082538-13cb73d70c44/go.mod h1:pLupJNRivwIsgwXOsRfbZyfXLMW9X2Cgp1yshhvG/8A=
+github.com/gojp/goreportcard v0.0.0-20191001233754-41818f5fd295 h1:bxKAVMPMl+mdSoSbVPNExWq/ix0G2WX9h5QyAWtjAoY=
+github.com/gojp/goreportcard v0.0.0-20191001233754-41818f5fd295/go.mod h1:/DA2Xpp+OaR3EHafQSnT9SKOfbG2NPQR/qp6Qr8AgIw=
 github.com/graphql-go/graphql v0.7.8 h1:769CR/2JNAhLG9+aa8pfLkKdR0H+r5lsQqling5WwpU=
 github.com/graphql-go/graphql v0.7.8/go.mod h1:k6yrAYQaSP59DC5UVxbgxESlmVyojThKdORUqGDGmrI=
 github.com/graphql-go/handler v0.2.3 h1:CANh8WPnl5M9uA25c2GBhPqJhE53Fg0Iue/fRNla71E=

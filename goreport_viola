@@ -1,0 +1,23 @@
+Grade: A+ (99.0%)
+Files: 86
+Issues: 4
+gofmt: 100%
+go_vet: 97%
+	action/graphql/queryTypes.go
+		Line 5: error: malformed module path "hcc/viola/logger": missing dot in first path element (vet)
+	action/graphql/mutationTypes.go
+		Line 9: error: malformed module path "hcc/viola/mysql": missing dot in first path element (vet)
+		Line 10: error: malformed module path "hcc/viola/types": missing dot in first path element (vet)
+gocyclo: 100%
+golint: 97%
+	lib/controlcli/hccCLI.go
+		Line 102: warning: if block ends with a return statement, so drop this else and outdent its block (golint)
+	lib/syscheck/sysChecktest.go
+		Line 5: warning: exported function Test_Root should have comment or be unexported (golint)
+		Line 5: warning: don't use underscores in Go names; func Test_Root should be TestRoot (golint)
+ineffassign: 100%
+license: 100%
+misspell: 98%
+	lib/controlcli/hccCLI.go
+		Line 95: warning: "Occured" is a misspelling of "Occurred" (misspell)
+		Line 162: warning: "occured" is a misspelling of "occurred" (misspell)
