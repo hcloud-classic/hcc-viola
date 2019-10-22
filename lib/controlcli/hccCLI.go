@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-// CheckRoot : Check root permission (Check if uid is 0)
+// HccCLI :
 func HccCLI(area string, action string) {
 
 	switch area {

@@ -2,7 +2,7 @@ package config
 
 import (
 	"github.com/Terry-Mao/goconf"
-	"hcc/harp/lib/logger"
+	"hcc/viola/lib/logger"
 )
 
 var conf = goconf.New()

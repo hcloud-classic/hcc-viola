@@ -2,12 +2,12 @@
 FROM ubuntu:latest
 MAINTAINER ish <ish@innogrid.com>
 
-RUN mkdir -p /GraphQL_Cello/
-WORKDIR /GraphQL_Cello/
+RUN mkdir -p /cello/
+WORKDIR /cello/
 
-ADD GraphQL_Cello /GraphQL_Cello/
-RUN chmod 755 /GraphQL_Cello/GraphQL_Cello
+ADD flute /cello/
+RUN chmod 755 /cello/cello
 
-EXPOSE 8001
+EXPOSE 7000
 
-CMD ["/GraphQL_Cello/GraphQL_Cello"]
+CMD ["/cello/cello"]
