@@ -48,10 +48,10 @@ build:
   stage: build
   script:
     - gmake
-    - sudo /usr/sbin/service viola stop
-    - sudo cp $PWD/viola /bin/viola
-    - sudo chmod 755 /bin/viola
-    - sudo /usr/sbin/service viola start
+    # - sudo /usr/sbin/service viola stop
+    # - sudo cp $PWD/viola /bin/viola
+    # - sudo chmod 755 /bin/viola
+    # - sudo /usr/sbin/service viola start
     - echo "Finished"
 #  only:
 #  - master
