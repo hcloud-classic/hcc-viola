@@ -447,7 +447,7 @@ func parseTime(v string) (int64, error) {
 // Keys return all the section keys.
 func (s *Section) Keys() []string {
 	keys := []string{}
-	for k := range s.data {
+	for k, _ := range s.data {
 		keys = append(keys, k)
 	}
 	return keys

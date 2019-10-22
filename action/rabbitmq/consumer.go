@@ -97,7 +97,7 @@ func RunHccCLI() error {
 
 			err := controlcli.HccCli(control.HccCommand)
 			if err != nil {
-				logger.Logger.Println("run_hcc_cli: " + err.Error())
+				logger.Logger.Println("run_hcc_cli: ")
 				return
 			}
 			//TODO: queue get_nodes to flute module

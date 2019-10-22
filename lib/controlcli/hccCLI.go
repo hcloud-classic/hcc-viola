@@ -10,6 +10,14 @@ import (
 
 var nodemap map[string]string
 
+// nodeOnlineCheck : check
+func nodeOnlineCheck() {
+	for key, val := range nodemap {
+		fmt.Println(key, val)
+	}
+
+}
+
 // HccCli : Hcc integration Command line interface
 func HccCli(action string) interface{} {
 	parseaction := strings.Split(action, " ")
@@ -46,6 +54,8 @@ func cmdNodes(actclass string, actscope int) interface{} {
 		} else {
 			restartNFS()
 		}
+		// nodeOnlineCheck
+
 	case "del":
 	default:
 		fmt.Println("Please Choose Operation {status, add, del}")
@@ -112,9 +122,6 @@ func nodeStatus(index int) interface{} {
 	return nil
 }
 
-func nodeOnlineCheck() {
-
-}
 func nodeStatusRegister(status string) {
 	tmpstr := strings.Split(string(status), "\n")
 	for _, words := range tmpstr {
