@@ -2,6 +2,7 @@ package rabbitmq
 
 import (
 	"encoding/json"
+	"fmt"
 	"hcc/viola/lib/controlcli"
 	"hcc/viola/lib/logger"
 	"hcc/viola/model"
@@ -88,17 +89,19 @@ func RunHccCLI() error {
 		for d := range msgsCreate {
 			log.Printf("RunHccCLI: Received a create message: %s", d.Body)
 
-			var control model.Control
-			err = json.Unmarshal(d.Body, &control)
+			var controls model.Controls
+			err = json.Unmarshal(d.Body, &controls)
 			if err != nil {
 				logger.Logger.Println("RunHccCLI: Failed to unmarshal run_hcc_cli data")
-				return
+				// return
 			}
+			fmt.Println("RabbitmQ : ", controls)
+			status, err := controlcli.HccCli(controls.Controls.HccCommand, controls.Controls.HccIPRange)
+			if !status && err != nil {
+				logger.Logger.Println("RunHccCLI: Faild execution command [", controls.Controls.HccCommand, "]")
+			} else {
+				logger.Logger.Println("RunHccCLI: Success execution command [", controls.Controls.HccCommand, "]")
 
-			err := controlcli.HccCli(control.HccCommand)
-			if err != nil {
-				logger.Logger.Println("run_hcc_cli: ")
-				return
 			}
 			//TODO: queue get_nodes to flute module
 
