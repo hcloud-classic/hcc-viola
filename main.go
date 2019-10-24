@@ -6,6 +6,7 @@ import (
 	"hcc/viola/lib/config"
 	"hcc/viola/lib/logger"
 	"strings"
+	"time"
 )
 
 func main() {
@@ -33,16 +34,20 @@ func main() {
 	// 	_ = rabbitmq.Connection.Close()
 	// }()
 
-	err := rabbitmq.PrepareChannel()
-	if err != nil {
-		logger.Logger.Panic(err)
+	for i := 0; i < 100; i++ {
+		err := rabbitmq.PrepareChannel()
+		if err != nil {
+			logger.Logger.Println(err)
+			time.Sleep(time.Second * 3)
+			continue
+		}
+		defer func() {
+			_ = rabbitmq.Channel.Close()
+		}()
+		defer func() {
+			_ = rabbitmq.Connection.Close()
+		}()
 	}
-	defer func() {
-		_ = rabbitmq.Channel.Close()
-	}()
-	defer func() {
-		_ = rabbitmq.Connection.Close()
-	}()
 
 	// forever := make(chan bool)
 
