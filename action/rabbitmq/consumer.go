@@ -89,20 +89,23 @@ func RunHccCLI() error {
 		for d := range msgsCreate {
 			log.Printf("RunHccCLI: Received a create message: %s", d.Body)
 
-			var controls model.Controls
-			err = json.Unmarshal(d.Body, &controls)
+			var control model.Control
+			err = json.Unmarshal(d.Body, &control)
 			if err != nil {
 				logger.Logger.Println("RunHccCLI: Failed to unmarshal run_hcc_cli data")
 				// return
 			}
-			fmt.Println("RabbitmQ : ", controls)
-			status, err := controlcli.HccCli(controls.Controls.HccCommand, controls.Controls.HccIPRange)
+			fmt.Println("RabbitmQ : ", control)
+			status, err := controlcli.HccCli(control.HccCommand, control.HccIPRange)
 			if !status && err != nil {
-				logger.Logger.Println("RunHccCLI: Faild execution command [", controls.Controls.HccCommand, "]")
+				logger.Logger.Println("RunHccCLI: Faild execution command [", control.HccCommand, "]")
+				control.HccCommand = "cluster failed"
 			} else {
-				logger.Logger.Println("RunHccCLI: Success execution command [", controls.Controls.HccCommand, "]")
-
+				logger.Logger.Println("RunHccCLI: Success execution command [", control.HccCommand, "]")
+				control.HccCommand = "running"
 			}
+			ProvideViola(control)
+
 			//TODO: queue get_nodes to flute module
 
 			//logger.Logger.Println("update_subnet: UUID = " + subnet.UUID + ": " + result)

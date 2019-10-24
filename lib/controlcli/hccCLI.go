@@ -295,7 +295,7 @@ func nAvailableNodeAdd(actscope string) bool {
 		}
 		return true
 	} else {
-		if nodeConnectCheck(actscope) {
+		if nodeConnectCheck(actscope) && actscope != "0" {
 			subnet[3] = actscope
 			if nodemap[actscope] == "present" && verifyNPort(strings.Join(subnet, "."), "2222") {
 				result := addNodes(actscope)
@@ -303,6 +303,30 @@ func nAvailableNodeAdd(actscope string) bool {
 				return true
 
 			}
+		} else {
+			start := strings.Split(tokenaction.iprange[0], ".")
+			end := strings.Split(tokenaction.iprange[0], ".")
+			startip, err := strconv.Atoi(start[3])
+			endip, err := strconv.Atoi(end[3])
+			if err != nil {
+
+			}
+			retry := 0
+			for !isAllNodeOnline(startip, endip) {
+				fmt.Println("Availabe Node Add retry : [", retry+1, "/10]")
+				if retry > 10 {
+					return false
+				}
+				for i := startip; i < endip; i++ {
+					subnet[3] = nodemap[string(i)]
+					if nodemap[string(i)] == "present" && verifyNPort(strings.Join(subnet, "."), "2222") {
+						addNodes(string(i))
+					}
+				}
+				retry++
+			}
+
+			return true
 		}
 
 		return false
