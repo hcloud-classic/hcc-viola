@@ -3,25 +3,26 @@ package rabbitmq
 import (
 	"encoding/json"
 	"hcc/viola/lib/logger"
+	"hcc/viola/model"
 
 	"github.com/streadway/amqp"
 )
 
-// XXXX : xxx
-func XXXX(xxx interface{}) error {
+// ProvideViola : Provide Some Action to violin
+func ProvideViola(action model.Control) error {
 	qCreate, err := Channel.QueueDeclare(
-		"return_nodes",
+		"consume_viola",
 		false,
 		false,
 		false,
 		false,
 		nil)
 	if err != nil {
-		logger.Logger.Println("return_nodes: Failed to declare a create queue")
+		logger.Logger.Println("consume_viola: Failed to declare a create queue")
 		return err
 	}
 
-	body, _ := json.Marshal(xxx)
+	body, _ := json.Marshal(action)
 	err = Channel.Publish(
 		"",
 		qCreate.Name,
@@ -33,7 +34,7 @@ func XXXX(xxx interface{}) error {
 			Body:            body,
 		})
 	if err != nil {
-		logger.Logger.Println("return_nodes: Failed to register publisher")
+		logger.Logger.Println("consume_viola: Failed to register publisher")
 		return err
 	}
 
