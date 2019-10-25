@@ -4,13 +4,14 @@ import (
 	"hcc/viola/action/rabbitmq"
 	"hcc/viola/lib/config"
 	"hcc/viola/lib/logger"
+	"hcc/viola/lib/syscheck"
 	"time"
 )
 
 func main() {
-	//if !syscheck.CheckRoot() {
-	//	return
-	//}
+	if !syscheck.CheckRoot() {
+		return
+	}
 
 	if !logger.Prepare() {
 		return
@@ -38,13 +39,10 @@ func main() {
 			logger.Logger.Println(err)
 			time.Sleep(time.Second * 3)
 			continue
+		} else {
+			break
 		}
 	}
-
-	forever := make(chan bool)
-
-	logger.Logger.Println(" [*] Waiting for messages. To exit press Ctrl+C")
-	<-forever
 
 	defer func() {
 		_ = rabbitmq.Channel.Close()
@@ -52,6 +50,16 @@ func main() {
 	defer func() {
 		_ = rabbitmq.Connection.Close()
 	}()
+
+	err := rabbitmq.RunHccCLI()
+	if err != nil {
+		logger.Logger.Println(err)
+	}
+
+	forever := make(chan bool)
+
+	logger.Logger.Println(" [*] Waiting for messages. To exit press Ctrl+C")
+	<-forever
 
 	// controlcli.HccCli("hcc nodes status 0")
 	// // controlcli.NodeInit()
