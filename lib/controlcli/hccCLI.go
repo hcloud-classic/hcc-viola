@@ -32,6 +32,7 @@ func HccCli(action string, iprange string) (bool, interface{}) {
 	}
 	fmt.Println(tokenaction.area, tokenaction.class, tokenaction.scope)
 	iskerrighed, err := kerrighedContainerVerify()
+
 	if iskerrighed {
 		switch tokenaction.area {
 		case "nodes":
@@ -249,6 +250,7 @@ func nodeStatusRegister(status string) {
 func isAllNodeOnline(startRange int, endRange int) bool {
 	for i := startRange; i < endRange; i++ {
 		if nodemap[string(i)] == "present" {
+			fmt.Println(nodemap[string(i)])
 			return false
 		}
 	}
@@ -305,9 +307,12 @@ func nAvailableNodeAdd(actscope string) bool {
 			}
 		} else {
 			start := strings.Split(tokenaction.iprange[0], ".")
-			end := strings.Split(tokenaction.iprange[0], ".")
+			end := strings.Split(tokenaction.iprange[1], ".")
+			fmt.Println(start, "   ", end)
 			startip, err := strconv.Atoi(start[3])
 			endip, err := strconv.Atoi(end[3])
+			fmt.Println(startip, "   ", endip)
+
 			if err != nil {
 
 			}
