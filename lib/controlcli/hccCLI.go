@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-//AtomicAction : action parse struct
+//AtomicAction : Parsing tjuhe
 type AtomicAction struct {
 	area        string
 	class       string
