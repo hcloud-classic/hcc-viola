@@ -8,17 +8,17 @@ import (
 	"github.com/streadway/amqp"
 )
 
-// ProvideViola : Provide Some Action to violin
-func ProvideViola(action model.Control) error {
+// ViolaToViolin : Provide Some Action to violin
+func ViolaToViolin(action model.Control) error {
 	qCreate, err := Channel.QueueDeclare(
-		"consume_viola",
+		"viola_to_violin",
 		false,
 		false,
 		false,
 		false,
 		nil)
 	if err != nil {
-		logger.Logger.Println("consume_viola: Failed to declare a create queue")
+		logger.Logger.Println("ViolaToViolin: Failed to declare a create queue")
 		return err
 	}
 
@@ -34,7 +34,7 @@ func ProvideViola(action model.Control) error {
 			Body:            body,
 		})
 	if err != nil {
-		logger.Logger.Println("consume_viola: Failed to register publisher")
+		logger.Logger.Println("ViolaToViolin: Failed to register publisher")
 		return err
 	}
 

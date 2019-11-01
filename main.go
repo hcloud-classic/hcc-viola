@@ -22,17 +22,6 @@ func main() {
 
 	config.Parser()
 
-	// err := rabbitmq.PrepareChannel()
-	// if err != nil {
-	// 	logger.Logger.Panic(err)
-	// }
-	// defer func() {
-	// 	_ = rabbitmq.Channel.Close()
-	// }()
-	// defer func() {
-	// 	_ = rabbitmq.Connection.Close()
-	// }()
-
 	for i := 0; i < 100; i++ {
 		err := rabbitmq.PrepareChannel()
 		if err != nil {
@@ -51,7 +40,7 @@ func main() {
 		_ = rabbitmq.Connection.Close()
 	}()
 
-	err := rabbitmq.RunHccCLI()
+	err := rabbitmq.ViolinToViola()
 	if err != nil {
 		logger.Logger.Println(err)
 	}
