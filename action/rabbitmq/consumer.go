@@ -97,7 +97,9 @@ func ViolinToViola() error {
 				logger.Logger.Println("ViolinToViola: Failed to unmarshal run_hcc_cli data")
 				// return
 			}
-			for i := 0; i < int(config.Viola.NodeAddRetryCount); i++ {
+
+			var i = 0
+			for ; i < int(config.Viola.NodeAddRetryCount); i++ {
 				logger.Logger.Println("RabbitmQ : ", control)
 				status, err := controlcli.HccCli(control.HccCommand, control.HccIPRange)
 				if !status && err != nil {
@@ -122,7 +124,9 @@ func ViolinToViola() error {
 				break
 			}
 
-			logger.Logger.Println("ViolinToViola: Retry count exceeded")
+			if i > int(config.Viola.NodeAddRetryCount) {
+				logger.Logger.Println("ViolinToViola: Retry count exceeded")
+			}
 
 			//TODO: queue get_nodes to flute module
 
