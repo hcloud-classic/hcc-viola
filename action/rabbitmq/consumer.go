@@ -105,7 +105,7 @@ func ViolinToViola() error {
 					control.HccCommand = "cluster failed"
 
 					logger.Logger.Println("ViolinToViola: Retry after " + strconv.Itoa(int(config.Viola.NodeAddRetryWaitSec)) + "second(s)")
-					logger.Logger.Println("ViolinToViola: Retry count (" + strconv.Itoa(i + 1) + "/" + strconv.Itoa(int(config.Viola.NodeAddRetryCount)) + ")")
+					logger.Logger.Println("ViolinToViola: Retry count (" + strconv.Itoa(i+1) + "/" + strconv.Itoa(int(config.Viola.NodeAddRetryCount)) + ")")
 					time.Sleep(time.Second * time.Duration(config.Viola.NodeAddRetryWaitSec))
 
 					continue
