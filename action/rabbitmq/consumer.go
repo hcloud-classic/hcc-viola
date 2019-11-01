@@ -101,8 +101,8 @@ func ViolinToViola() error {
 			var i = 0
 			for ; i < int(config.Viola.NodeAddRetryCount); i++ {
 				logger.Logger.Println("RabbitmQ : ", control)
-				status, err := controlcli.HccCli(control.HccCommand, control.HccIPRange)
-				if !status && err != nil {
+				err := controlcli.HccCli(control.HccCommand, control.HccIPRange)
+				if err != nil {
 					logger.Logger.Println("ViolinToViola: Faild execution command [", control.HccCommand, "]")
 					control.HccCommand = "cluster failed"
 
