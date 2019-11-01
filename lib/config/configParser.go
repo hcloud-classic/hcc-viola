@@ -58,6 +58,11 @@ func parseViola() {
 	}
 
 	Viola = viola{}
+	Viola.StartingDelayTimeSec, err = config.ViolaConfig.Int("viola_start_delay_time_sec")
+	if err != nil {
+		logger.Logger.Panicln(err)
+	}
+
 	Viola.NodeAddRetryCount, err = config.ViolaConfig.Int("viola_node_add_retry_count")
 	if err != nil {
 		logger.Logger.Panicln(err)

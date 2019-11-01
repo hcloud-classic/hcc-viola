@@ -31,6 +31,7 @@ rabbitmq_address 555.555.555.555
 rabbitmq_port 15672
 
 [viola]
+viola_start_delay_time_sec 30
 viola_node_add_retry_count 10
 viola_node_add_retry_wait_sec 5
 -----------------------------------*/
