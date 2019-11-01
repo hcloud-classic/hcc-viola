@@ -60,7 +60,7 @@ func GetClusterIP() error {
 // ViolinToViola : Hcc Integration of CLI
 func ViolinToViola() error {
 	qCreate, err := Channel.QueueDeclare(
-		"ViolaToViolin",
+		"violin_to_viola",
 		false,
 		false,
 		false,
