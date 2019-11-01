@@ -122,6 +122,8 @@ func ViolinToViola() error {
 				break
 			}
 
+			logger.Logger.Println("ViolinToViola: Retry count exceeded")
+
 			//TODO: queue get_nodes to flute module
 
 			//logger.Logger.Println("update_subnet: UUID = " + subnet.UUID + ": " + result)
