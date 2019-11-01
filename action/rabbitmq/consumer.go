@@ -38,7 +38,7 @@ func GetClusterIP() error {
 
 	go func() {
 		for d := range msgsCreate {
-			log.Printf("get_cluster_ip: Received a create message: %s", d.Body)
+			log.Printf("get_cluster_ip: Received a create message: %s\n", d.Body)
 
 			var subnet model.Subnet
 			err = json.Unmarshal(d.Body, &subnet)
@@ -86,7 +86,7 @@ func ViolinToViola() error {
 
 	go func() {
 		for d := range msgsCreate {
-			logger.Logger.Printf("ViolinToViola: Received a create message: %s", d.Body)
+			logger.Logger.Printf("ViolinToViola: Received a create message: %s\n", d.Body)
 
 			var control model.Control
 			err = json.Unmarshal(d.Body, &control)
