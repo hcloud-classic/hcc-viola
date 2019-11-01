@@ -23,12 +23,12 @@ var tokenaction AtomicAction
 var nodemap map[string]string
 
 // HccCli : Hcc integration Command line interface
-func HccCli(action string, iprange string) (bool, interface{}) {
+func HccCli(action string, iprange string) error {
 	clearAction()
 	logger.Logger.Println("Receive : ", action)
 	err := ActionParser(action, iprange)
 	if err != nil {
-		return false, errors.New("ActionParcer Faild")
+		return errors.New("ActionParcer Faild")
 	}
 
 	logger.Logger.Println(tokenaction.area, tokenaction.class, tokenaction.scope)
@@ -40,17 +40,22 @@ func HccCli(action string, iprange string) (bool, interface{}) {
 	if iskerrighed {
 		switch tokenaction.area {
 		case "nodes":
-			return cmdNodes(tokenaction.class, tokenaction.scope)
+			err := cmdNodes(tokenaction.class, tokenaction.scope)
+			if err != nil {
+				return err
+			}
+
+			return nil
 		case "cluster":
 			cmdCluster(tokenaction.class, tokenaction.scope)
 		default:
 			logger.Logger.Println("Please choose the area {nodes or cluster}")
 		}
 	} else {
-		return false, errors.New("please proceed in Kerrighed container")
+		return errors.New("please proceed in Kerrighed container")
 	}
 
-	return false, nil
+	return errors.New("HccCli failed")
 }
 
 // ActionParser : Parcing Action
@@ -134,34 +139,42 @@ func clearAction() {
 	tokenaction.iprange = nil
 }
 
-func cmdNodes(actclass string, actscope []string) (bool, interface{}) {
+func cmdNodes(actclass string, actscope []string) error {
 	switch actclass {
 	case "status":
-		err, verbosenode := nodeStatus(actscope[0])
-		if err != false {
-			return true, nil
+		err := nodeStatus(actscope[0])
+		if err != nil {
+			return err
 		}
-		return false, verbosenode
+
+		return nil
 	case "add":
 		if checkNFS() {
 			logger.Logger.Println("Leader Node NFS Service On")
 		} else {
 			restartNFS()
 			logger.Logger.Println("Leader Node NFS Service restart")
+		}
 
+		// For nodeMap renewal
+		err := nodeStatus("0")
+		if err != nil {
+			return err
 		}
-		//For nodeMap renewal
-		nodeStatus("0")
+
 		if nAvailableNodeAdd(actscope[0]) {
-			return true, errors.New("all nodes are preparing with online")
+			logger.Logger.Println("all nodes are preparing with online")
+			return nil
 		}
-		return false, errors.New("all nodes are not preparing with online")
+
+		return errors.New("all nodes are not preparing with online")
 	case "del":
 		// TODO : Add del operation
 	default:
-		return false, errors.New("please choose operation {status, add, del}")
+		return errors.New("please choose operation {status, add, del}")
 	}
-	return false, errors.New("not available command")
+
+	return errors.New("not available command")
 }
 
 func cmdCluster(actclass string, actscope []string) {
@@ -204,17 +217,19 @@ func restartNFS() {
 
 // @ N node nodeStatus index == n
 // @ all node status index == 0
-func nodeStatus(index string) (bool, interface{}) {
+func nodeStatus(index string) error {
 	cmd := exec.Command("krgadm", "nodes", "status")
 	result, err := cmd.CombinedOutput()
 	if err != nil {
-		logger.Logger.Println("Node status error occurred!!")
+		errMsg := "error occurred while running krgadm command"
+		logger.Logger.Println(errMsg)
+		return errors.New(errMsg)
 	}
 
 	if index == "0" {
 		logger.Logger.Println("HCC All Nodes Status \nIP  status\n", string(result))
 		nodeStatusRegister(string(result))
-		return true, string(result)
+		return nil
 	}
 
 	if nodeConnectCheck(index) {
@@ -223,15 +238,15 @@ func nodeStatus(index string) (bool, interface{}) {
 			retoken := strings.Split(words, ":")
 			if string(words[0]) == index {
 				logger.Logger.Println(index, " th node status = > ", retoken[1])
-				return true, retoken[1]
+				return nil
 			}
 		}
 	} else {
 		result := "[" + index + "] th Node Is Not in Cluster Area"
-		return false, errors.New(result)
+		return errors.New(result)
 	}
 
-	return false, nil
+	return errors.New("nodeStatus failed")
 }
 
 func nodeStatusRegister(status string) {
