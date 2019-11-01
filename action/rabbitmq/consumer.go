@@ -95,7 +95,7 @@ func ViolinToViola() error {
 			err = json.Unmarshal(d.Body, &control)
 			if err != nil {
 				logger.Logger.Println("ViolinToViola: Failed to unmarshal run_hcc_cli data")
-				// return
+				continue
 			}
 
 			var i = 0
