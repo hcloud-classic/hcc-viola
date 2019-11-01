@@ -2,7 +2,7 @@ package controlcli
 
 import (
 	"errors"
-	"fmt"
+	"hcc/viola/lib/logger"
 	"os"
 	"os/exec"
 	"strconv"
@@ -25,12 +25,13 @@ var nodemap map[string]string
 // HccCli : Hcc integration Command line interface
 func HccCli(action string, iprange string) (bool, interface{}) {
 	clearAction()
-	fmt.Println("Receive : ", action)
+	logger.Logger.Println("Receive : ", action)
 	err := ActionParser(action, iprange)
 	if err != nil {
 		return false, errors.New("ActionParcer Faild")
 	}
-	fmt.Println(tokenaction.area, tokenaction.class, tokenaction.scope)
+
+	logger.Logger.Println(tokenaction.area, tokenaction.class, tokenaction.scope)
 	iskerrighed, _ := kerrighedContainerVerify()
 	//if err != nil {
 	//	return false, err
@@ -43,7 +44,7 @@ func HccCli(action string, iprange string) (bool, interface{}) {
 		case "cluster":
 			cmdCluster(tokenaction.class, tokenaction.scope)
 		default:
-			fmt.Println("Please choose the area {nodes or cluster}")
+			logger.Logger.Println("Please choose the area {nodes or cluster}")
 		}
 	} else {
 		return false, errors.New("please proceed in Kerrighed container")
@@ -57,7 +58,7 @@ func ActionParser(action string, iprange string) interface{} {
 	//Action parsing
 	tmpstr := strings.Split(action, " ")
 	tmplength := len(tmpstr)
-	// fmt.Println("action : ", action, "\n", "Length =>", tmplength, "++++++", tmpstr[1])
+	// logger.Logger.Println("action : ", action, "\n", "Length =>", tmplength, "++++++", tmpstr[1])
 
 	tokenaction.area = tmpstr[1]
 	if tmplength <= 3 && tmplength >= 2 {
@@ -72,7 +73,7 @@ func ActionParser(action string, iprange string) interface{} {
 
 	hasOption := strings.Contains(action, "-n")
 	hasRangeOption := strings.Contains(action, ":")
-	fmt.Println("hasOption=> ", hasOption, "] hasRangeOption => ", hasRangeOption)
+	logger.Logger.Println("hasOption=> ", hasOption, "] hasRangeOption => ", hasRangeOption)
 	//deliIndex : delimeter index
 	var deliIndex = 0
 	var endOfIndex = 0
@@ -111,16 +112,16 @@ func ActionParser(action string, iprange string) interface{} {
 		tokenaction.iprange = append(tokenaction.iprange, iptmp[2])
 		//Debug For iprange
 		// for i, words := range iptmp {
-		// 	fmt.Println(i, "=>", words)
+		// 	logger.Logger.Println(i, "=>", words)
 		// }
 	}
 
 	//Debug : tokenaction Structure
-	fmt.Println("area =>", tokenaction.area)
-	fmt.Println("class => ", tokenaction.class)
-	fmt.Println("scope => ", tokenaction.scope)
-	fmt.Println("iprange => ", tokenaction.iprange)
-	fmt.Println("rangeoption => ", tokenaction.rangeoption)
+	logger.Logger.Println("area =>", tokenaction.area)
+	logger.Logger.Println("class => ", tokenaction.class)
+	logger.Logger.Println("scope => ", tokenaction.scope)
+	logger.Logger.Println("iprange => ", tokenaction.iprange)
+	logger.Logger.Println("rangeoption => ", tokenaction.rangeoption)
 
 	return nil
 }
@@ -143,10 +144,10 @@ func cmdNodes(actclass string, actscope []string) (bool, interface{}) {
 		return false, verbosenode
 	case "add":
 		if checkNFS() {
-			fmt.Println("Leader Node NFS Service On")
+			logger.Logger.Println("Leader Node NFS Service On")
 		} else {
 			restartNFS()
-			fmt.Println("Leader Node NFS Service restart")
+			logger.Logger.Println("Leader Node NFS Service restart")
 
 		}
 		//For nodeMap renewal
@@ -171,7 +172,7 @@ func addNodes(actscope string) interface{} {
 	cmd := exec.Command("krgadm", "nodes", "add", "-n", actscope)
 	result, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println("Node Can't add the Num of [", actscope, "] Node")
+		logger.Logger.Println("Node Can't add the Num of [", actscope, "] Node")
 		return err
 	}
 	return result
@@ -181,7 +182,7 @@ func checkNFS() bool {
 	cmd := exec.Command("service", "nfs-common", "status")
 	result, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println("NFS Service error")
+		logger.Logger.Println("NFS Service error")
 
 	} else {
 		if strings.Contains(string(result), "all daemons running") {
@@ -195,7 +196,7 @@ func restartNFS() {
 	cmd := exec.Command("service", "nfs-common", "restart")
 	_, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println("NFS Service Can't start")
+		logger.Logger.Println("NFS Service Can't start")
 
 	}
 
@@ -207,11 +208,11 @@ func nodeStatus(index string) (bool, interface{}) {
 	cmd := exec.Command("krgadm", "nodes", "status")
 	result, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println("Node status error occurred!!")
+		logger.Logger.Println("Node status error occurred!!")
 	}
 
 	if index == "0" {
-		fmt.Println("HCC All Nodes Status \nIP  status\n", string(result))
+		logger.Logger.Println("HCC All Nodes Status \nIP  status\n", string(result))
 		nodeStatusRegister(string(result))
 		return true, string(result)
 	}
@@ -221,7 +222,7 @@ func nodeStatus(index string) (bool, interface{}) {
 		for _, words := range tmpstr {
 			retoken := strings.Split(words, ":")
 			if string(words[0]) == index {
-				fmt.Println(index, " th node status = > ", retoken[1])
+				logger.Logger.Println(index, " th node status = > ", retoken[1])
 				return true, retoken[1]
 			}
 		}
@@ -242,8 +243,8 @@ func nodeStatusRegister(status string) {
 			// if string(words[0]) != "1" {}
 			nodemap[string(words[0])] = retoken[1]
 
-			fmt.Println("words => ", string(words[0]), "retoken => ", retoken[1])
-			fmt.Println("register => ", nodemap[string(words[0])])
+			logger.Logger.Println("words => ", string(words[0]), "retoken => ", retoken[1])
+			logger.Logger.Println("register => ", nodemap[string(words[0])])
 
 		}
 	}
@@ -252,7 +253,7 @@ func nodeStatusRegister(status string) {
 func isAllNodeOnline(startRange int, endRange int) bool {
 	for i := startRange; i < endRange; i++ {
 		if nodemap[string(i)] == "present" {
-			fmt.Println(nodemap[string(i)])
+			logger.Logger.Println(nodemap[string(i)])
 			return false
 		}
 	}
@@ -261,7 +262,7 @@ func isAllNodeOnline(startRange int, endRange int) bool {
 
 func nodeConnectCheck(actscope string) bool {
 	for key := range nodemap {
-		// fmt.Println(key, val)
+		// logger.Logger.Println(key, val)
 		if key == actscope {
 			return true
 		}
@@ -273,7 +274,7 @@ func checkAllNodeOnline(startRange int, endRange int, subnet []string) bool {
 	retry := 0
 
 	for !isAllNodeOnline(startRange, endRange) {
-		fmt.Println("Available Node Add retry : [", retry+1, "/10]")
+		logger.Logger.Println("Available Node Add retry : [", retry+1, "/10]")
 		if retry > 10 {
 			return false
 		}
@@ -290,19 +291,19 @@ func checkAllNodeOnline(startRange int, endRange int, subnet []string) bool {
 
 // nAvailableNodeAdd : check
 func nAvailableNodeAdd(actscope string) bool {
-	// fmt.Println("qwe => ", nodemap["1"])
-	fmt.Println("Now actscope=>", actscope)
+	// logger.Logger.Println("qwe => ", nodemap["1"])
+	logger.Logger.Println("Now actscope=>", actscope)
 	subnet := strings.Split(tokenaction.iprange[0], ".")
 	if tokenaction.rangeoption {
 		parseScope := strings.Split(actscope, ":")
 		startRange, err := strconv.Atoi(parseScope[0])
 		if err != nil {
-			fmt.Println("Can't parse available node")
+			logger.Logger.Println("Can't parse available node")
 			return false
 		}
 		endRange, err := strconv.Atoi(parseScope[1])
 		if err != nil {
-			fmt.Println("Can't parse available node")
+			logger.Logger.Println("Can't parse available node")
 			return false
 		}
 		//Compute node Is available?
@@ -313,25 +314,25 @@ func nAvailableNodeAdd(actscope string) bool {
 		subnet[3] = actscope
 		if nodemap[actscope] == "present" && verifyNPort(strings.Join(subnet, "."), "2222") {
 			result := addNodes(actscope)
-			fmt.Println("Action Result : ", result)
+			logger.Logger.Println("Action Result : ", result)
 			return true
 
 		}
 	} else {
 		start := strings.Split(tokenaction.iprange[0], ".")
 		end := strings.Split(tokenaction.iprange[1], ".")
-		fmt.Println(start, "   ", end)
+		logger.Logger.Println(start, "   ", end)
 		startip, err := strconv.Atoi(start[3])
 		if err != nil {
-			fmt.Println("Can't parse IP range")
+			logger.Logger.Println("Can't parse IP range")
 			return false
 		}
 		endip, err := strconv.Atoi(end[3])
 		if err != nil {
-			fmt.Println("Can't parse IP range")
+			logger.Logger.Println("Can't parse IP range")
 			return false
 		}
-		fmt.Println(startip, "   ", endip)
+		logger.Logger.Println(startip, "   ", endip)
 
 		return checkAllNodeOnline(startip, endip, subnet)
 	}
@@ -343,20 +344,20 @@ func nAvailableNodeAdd(actscope string) bool {
 	// 	if val == "present" && key != "1" {
 	// 		return false
 	// 	}
-	// 	fmt.Println("Codex => ", key, val)
+	// 	logger.Logger.Println("Codex => ", key, val)
 	// }
 	//
 }
 
 func printOutput(outs string) {
 	if len(outs) > 0 {
-		fmt.Printf("==> Output: %s\n", outs)
+		logger.Logger.Printf("==> Output: %s\n", outs)
 	}
 }
 
 func kerrighedContainerVerify() (bool, error) {
 	if fileExists("/proc/nodes/self/nodeid") {
-		fmt.Println("Kerrighed Container load")
+		logger.Logger.Println("Kerrighed Container load")
 		return true, nil
 	}
 
@@ -380,17 +381,17 @@ func fileExists(filename string) bool {
 // result, err := cmd.CombinedOutput()
 // qwe := strings.Split(string(result), "\n")
 // for i, words := range qwe {
-// 	fmt.Println(i, "= > ", words)
+// 	logger.Logger.Println(i, "= > ", words)
 // }
 // if err != nil {
-// 	fmt.Println("Error occurred!!")
+// 	logger.Logger.Println("Error occurred!!")
 // }
 
 func verifyNPort(ip string, port string) bool {
 	cmd := exec.Command("nmap", ip)
 	result, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println(ip, " has not configure the ", port)
+		logger.Logger.Println(ip, " has not configure the ", port)
 	}
 	//compute on?
 	if strings.Contains(string(result), port) {
