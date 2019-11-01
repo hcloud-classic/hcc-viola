@@ -2,10 +2,13 @@ package rabbitmq
 
 import (
 	"encoding/json"
+	"hcc/viola/lib/config"
 	"hcc/viola/lib/controlcli"
 	"hcc/viola/lib/logger"
 	"hcc/viola/model"
 	"log"
+	"strconv"
+	"time"
 )
 
 // GetClusterIP : Consume 'update_subnet' queues from RabbitMQ channel
@@ -94,19 +97,29 @@ func ViolinToViola() error {
 				logger.Logger.Println("ViolinToViola: Failed to unmarshal run_hcc_cli data")
 				// return
 			}
-			logger.Logger.Println("RabbitmQ : ", control)
-			status, err := controlcli.HccCli(control.HccCommand, control.HccIPRange)
-			if !status && err != nil {
-				logger.Logger.Println("ViolinToViola: Faild execution command [", control.HccCommand, "]")
-				control.HccCommand = "cluster failed"
-			} else {
-				logger.Logger.Println("ViolinToViola: Success execution command [", control.HccCommand, "]")
-				control.HccCommand = "running"
-			}
+			for i := 0; i < int(config.Viola.NodeAddRetryCount); i++ {
+				logger.Logger.Println("RabbitmQ : ", control)
+				status, err := controlcli.HccCli(control.HccCommand, control.HccIPRange)
+				if !status && err != nil {
+					logger.Logger.Println("ViolinToViola: Faild execution command [", control.HccCommand, "]")
+					control.HccCommand = "cluster failed"
 
-			err = ViolaToViolin(control)
-			if err != nil {
-				logger.Logger.Println(err)
+					logger.Logger.Println("ViolinToViola: Retry after " + strconv.Itoa(int(config.Viola.NodeAddRetryWaitSec)) + "second(s)")
+					logger.Logger.Println("ViolinToViola: Retry count (" + strconv.Itoa(i + 1) + "/" + strconv.Itoa(int(config.Viola.NodeAddRetryCount)) + ")")
+					time.Sleep(time.Second * time.Duration(config.Viola.NodeAddRetryWaitSec))
+
+					continue
+				} else {
+					logger.Logger.Println("ViolinToViola: Success execution command [", control.HccCommand, "]")
+					control.HccCommand = "running"
+				}
+
+				err = ViolaToViolin(control)
+				if err != nil {
+					logger.Logger.Println(err)
+				}
+
+				break
 			}
 
 			//TODO: queue get_nodes to flute module

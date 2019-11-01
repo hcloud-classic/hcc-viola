@@ -1,9 +1,8 @@
 package config
 
 type viola struct {
-	ServerAddress    string `goconf:"violin:violin_server_address"`     // ServerAddress : IP address of server which installed violin module
-	ServerPort       int64  `goconf:"violin:violin_server_port"`        // ServerPort : Listening port number of violin module
-	RequestTimeoutMs int64  `goconf:"violin:violin_request_timeout_ms"` // RequestTimeoutMs : HTTP timeout for GraphQL request to violin module
+	NodeAddRetryCount   int64 `goconf:"violin:viola_node_add_retry_count"`    // NodeAddRetryCount : Retry count for add compute nodes
+	NodeAddRetryWaitSec int64 `goconf:"violin:viola_node_add_retry_wait_sec"` // NodeAddWaitSec : Wait seconds when retrying to add compute nodes
 }
 
 // Viola : violin config structure

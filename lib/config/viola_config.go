@@ -7,7 +7,7 @@ var configLocation = "/etc/hcc/viola/viola.conf"
 type violaConfig struct {
 	HTTPConfig     *goconf.Section
 	RabbitMQConfig *goconf.Section
-	ViolinConfig   *goconf.Section
+	ViolaConfig    *goconf.Section
 }
 
 /*-----------------------------------
@@ -29,4 +29,8 @@ rabbitmq_id user
 rabbitmq_password pass
 rabbitmq_address 555.555.555.555
 rabbitmq_port 15672
+
+[viola]
+viola_node_add_retry_count 10
+viola_node_add_retry_wait_sec 5
 -----------------------------------*/
