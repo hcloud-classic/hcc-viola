@@ -48,6 +48,7 @@ func HccCli(action string, iprange string) error {
 			return nil
 		case "cluster":
 			cmdCluster(tokenaction.class, tokenaction.scope)
+			break
 		default:
 			logger.Logger.Println("Please choose the area {nodes or cluster}")
 		}
