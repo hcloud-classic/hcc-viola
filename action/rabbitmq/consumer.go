@@ -2,7 +2,6 @@ package rabbitmq
 
 import (
 	"encoding/json"
-	"fmt"
 	"hcc/viola/lib/controlcli"
 	"hcc/viola/lib/logger"
 	"hcc/viola/model"
@@ -87,7 +86,7 @@ func ViolinToViola() error {
 
 	go func() {
 		for d := range msgsCreate {
-			log.Printf("ViolinToViola: Received a create message: %s", d.Body)
+			logger.Logger.Printf("ViolinToViola: Received a create message: %s", d.Body)
 
 			var control model.Control
 			err = json.Unmarshal(d.Body, &control)
@@ -95,7 +94,7 @@ func ViolinToViola() error {
 				logger.Logger.Println("ViolinToViola: Failed to unmarshal run_hcc_cli data")
 				// return
 			}
-			fmt.Println("RabbitmQ : ", control)
+			logger.Logger.Println("RabbitmQ : ", control)
 			status, err := controlcli.HccCli(control.HccCommand, control.HccIPRange)
 			if !status && err != nil {
 				logger.Logger.Println("ViolinToViola: Faild execution command [", control.HccCommand, "]")
