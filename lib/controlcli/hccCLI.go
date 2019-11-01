@@ -152,7 +152,12 @@ func cmdNodes(actclass string, actscope []string) (bool, interface{}) {
 
 		}
 		//For nodeMap renewal
-		nodeStatus("0")
+		status, msg := nodeStatus("0")
+		logger.Logger.Println(msg)
+		if !status {
+			return false, msg
+		}
+
 		if nAvailableNodeAdd(actscope[0]) {
 			return true, errors.New("all nodes are preparing with online")
 		}
@@ -209,7 +214,7 @@ func nodeStatus(index string) (bool, interface{}) {
 	cmd := exec.Command("krgadm", "nodes", "status")
 	result, err := cmd.CombinedOutput()
 	if err != nil {
-		logger.Logger.Println("Node status error occurred!!")
+		return false, errors.New("error occurred while running krgadm command")
 	}
 
 	if index == "0" {
