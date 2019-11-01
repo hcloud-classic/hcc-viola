@@ -52,8 +52,8 @@ func parseRabbitMQ() {
 }
 
 func parseViola() {
-	config.RabbitMQConfig = conf.Get("viola")
-	if config.RabbitMQConfig == nil {
+	config.ViolaConfig = conf.Get("viola")
+	if config.ViolaConfig == nil {
 		logger.Logger.Panicln("no viola section")
 	}
 
