@@ -63,7 +63,7 @@ func parseViola() {
 		logger.Logger.Panicln(err)
 	}
 
-	Viola.NodeAddRetryWaitSec, err = config.ViolaConfig.Int("viola_node_add_wait_sec")
+	Viola.NodeAddRetryWaitSec, err = config.ViolaConfig.Int("viola_node_add_retry_wait_sec")
 	if err != nil {
 		logger.Logger.Panicln(err)
 	}
