@@ -57,17 +57,17 @@ func GetClusterIP() error {
 	return nil
 }
 
-//RunHccCLI : Hcc Integration of CLI
-func RunHccCLI() error {
+//ConsumeAction : Hcc Integration of CLI
+func ConsumeAction() error {
 	qCreate, err := Channel.QueueDeclare(
-		"run_hcc_cli",
+		"to_viola",
 		false,
 		false,
 		false,
 		false,
 		nil)
 	if err != nil {
-		logger.Logger.Println("RunHccCLI: Failed to get run_hcc_cli")
+		logger.Logger.Println("ConsumeAction: Failed to get run_hcc_cli")
 		return err
 	}
 
@@ -81,30 +81,30 @@ func RunHccCLI() error {
 		nil,
 	)
 	if err != nil {
-		logger.Logger.Println("RunHccCLI: Failed to register run_hcc_cli")
+		logger.Logger.Println("ConsumeAction: Failed to register run_hcc_cli")
 		return err
 	}
 
 	go func() {
 		for d := range msgsCreate {
-			log.Printf("RunHccCLI: Received a create message: %s", d.Body)
+			log.Printf("ConsumeAction: Received a create message: %s", d.Body)
 
 			var control model.Control
 			err = json.Unmarshal(d.Body, &control)
 			if err != nil {
-				logger.Logger.Println("RunHccCLI: Failed to unmarshal run_hcc_cli data")
+				logger.Logger.Println("ConsumeAction: Failed to unmarshal run_hcc_cli data")
 				// return
 			}
 			fmt.Println("RabbitmQ : ", control)
-			status, err := controlcli.HccCli(control.HccCommand, control.HccIPRange)
+
+			status, err := controlcli.HccCli(control)
 			if !status && err != nil {
-				logger.Logger.Println("RunHccCLI: Faild execution command [", control.HccCommand, "]")
-				control.HccCommand = "cluster failed"
+				logger.Logger.Println("ConsumeAction: Faild execution command [", "]")
 			} else {
-				logger.Logger.Println("RunHccCLI: Success execution command [", control.HccCommand, "]")
-				control.HccCommand = "running"
+				logger.Logger.Println("ConsumeAction: Success execution command [", "]")
 			}
-			ProvideViola(control)
+
+			// PublishViolin(control)
 
 			//TODO: queue get_nodes to flute module
 

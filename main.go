@@ -4,14 +4,13 @@ import (
 	"hcc/viola/action/rabbitmq"
 	"hcc/viola/lib/config"
 	"hcc/viola/lib/logger"
-	"hcc/viola/lib/syscheck"
 	"time"
 )
 
 func main() {
-	if !syscheck.CheckRoot() {
-		return
-	}
+	// if !syscheck.CheckRoot() {
+	// 	return
+	// }
 
 	if !logger.Prepare() {
 		return
@@ -51,7 +50,7 @@ func main() {
 		_ = rabbitmq.Connection.Close()
 	}()
 
-	err := rabbitmq.RunHccCLI()
+	err := rabbitmq.ConsumeAction()
 	if err != nil {
 		logger.Logger.Println(err)
 	}
