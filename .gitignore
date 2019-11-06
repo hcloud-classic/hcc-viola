@@ -1,7 +1,11 @@
-GraphQL_Cello
+viola
 coverage.out
 goreport_grade
-
-.idea
-
+.idea/
+.vscode/
+/vendor
+/_venodr-*
 nohup.out
+
+./vendor/*
+go.mod

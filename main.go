@@ -1,35 +1,59 @@
 package main
 
 import (
-	"hcc/viola/checkroot"
-	"hcc/viola/config"
-	"hcc/viola/graphql"
-	"hcc/viola/logger"
-	"hcc/viola/mysql"
-	"net/http"
+	"hcc/viola/action/rabbitmq"
+	"hcc/viola/lib/config"
+	"hcc/viola/lib/logger"
+	"hcc/viola/lib/syscheck"
+	"time"
 )
 
 func main() {
-	if !checkroot.CheckRoot() {
+	if !syscheck.CheckRoot() {
 		return
 	}
 
 	if !logger.Prepare() {
 		return
 	}
-	defer logger.FpLog.Close()
+	defer func() {
+		_ = logger.FpLog.Close()
+	}()
 
-	err := mysql.Prepare()
-	if err != nil {
-		return
+	config.Parser()
+
+	for i := 0; i < 100; i++ {
+		err := rabbitmq.PrepareChannel()
+		if err != nil {
+			logger.Logger.Println(err)
+			time.Sleep(time.Second * 3)
+			continue
+		} else {
+			break
+		}
 	}
-	defer mysql.Db.Close()
 
-	http.Handle("/graphql", graphql.GraphqlHandler)
+	defer func() {
+		_ = rabbitmq.Channel.Close()
+	}()
+	defer func() {
+		_ = rabbitmq.Connection.Close()
+	}()
 
-	logger.Logger.Println("Server is running on port " + config.HTTPPort)
-	err = http.ListenAndServe(":"+config.HTTPPort, nil)
+	err := rabbitmq.ViolinToViola()
 	if err != nil {
-		logger.Logger.Println("Failed to prepare http server!")
+		logger.Logger.Println(err)
 	}
+
+	forever := make(chan bool)
+
+	logger.Logger.Println(" [*] Waiting for messages. To exit press Ctrl+C")
+	<-forever
+
+	// controlcli.HccCli("hcc nodes status 0")
+	// // controlcli.NodeInit()
+	// controlcli.HccCli("hcc nodes add 2")
+	// fmt.Println("Result\n")
+	// controlcli.HccCli("hcc nodes status 0")
+	// controlcli.HccCli("krgadm nodes add -n 1:2")
 }
