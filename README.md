@@ -4,6 +4,10 @@
 
 
 
+## Hcloud-classic  관련 스크립트 필독!!!
+[script/README 필독](./script/README)
+
+
 ## CLI
 
 krgadm

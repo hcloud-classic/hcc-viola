@@ -32,28 +32,25 @@ func HccCli(parseaction model.Control) (bool, interface{}) {
 	ActionClassify(parseaction)
 	//Debug Option
 	// fmt.Println("Receive : ", action)
-	// err := ActionParser(action, iprange)
-	// if err != nil {
-	// 	return false, errors.New("ActionParcer Faild")
-	// }
-	fmt.Println(tokenaction.area, tokenaction.class, tokenaction.scope)
-	// ishcccluster, err := hccContainerVerify()
-	// if err != nil {
-	// 	return false, errors.New("ActionParcer Faild")
-	// }
 
-	// if !ishcccluster {
-	switch tokenaction.area {
-	case "nodes":
-		return cmdNodes()
-	case "cluster":
-		cmdCluster(tokenaction.class, tokenaction.scope)
-	default:
-		fmt.Println("Please choose the area {nodes or cluster}")
+	fmt.Println(tokenaction.area, tokenaction.class, tokenaction.scope)
+	ishcccluster, err := hccContainerVerify()
+	if err != nil {
+		return false, errors.New("ActionParcer Faild")
 	}
-	// } else {
-	// 	return false, errors.New("Please Continue in Kerrighed Container")
-	// }
+
+	if !ishcccluster {
+		switch tokenaction.area {
+		case "nodes":
+			return cmdNodes()
+		case "cluster":
+			cmdCluster(tokenaction.class, tokenaction.scope)
+		default:
+			fmt.Println("Please choose the area {nodes or cluster}")
+		}
+	} else {
+		return false, errors.New("Please Continue in Kerrighed Container")
+	}
 
 	return false, nil
 }
@@ -99,7 +96,6 @@ func hccActionparser(parseaction model.HccAction) interface{} {
 func ActionClassify(parsingmsg model.Control) interface{} {
 	tokenaction.publisher = parsingmsg.Publisher
 	tokenaction.receiver = parsingmsg.Receiver
-
 	//Classify Action Type
 	switch parsingmsg.Control.ActionType {
 	case "hcc":
@@ -108,14 +104,12 @@ func ActionClassify(parsingmsg model.Control) interface{} {
 			errstr := fmt.Sprintf("%v", err)
 			return errors.New("[Hcc Action Parsing] Can't parse hcc action (" + errstr + ")")
 		}
-		return nil
 	case "normal":
 		err := normalActionparser()
 		if err != nil {
 			errstr := fmt.Sprintf("%v", err)
 			return errors.New("[Normal Action Parsing] Can't parse normal action (" + errstr + ")")
 		}
-		return nil
 	default:
 		return errors.New("[Parsing Error]Please Correct Action type")
 	}
@@ -142,15 +136,15 @@ func cmdNodes() (bool, interface{}) {
 			return false, verbosenode
 		}
 	case "add":
-		// if checkNFS() {
-		// 	fmt.Println("Leader Node NFS Service On")
-		// } else {
-		// 	restartNFS()
-		// 	fmt.Println("Leader Node NFS Service restart")
+		if checkNFS() {
+			fmt.Println("Leader Node NFS Service On")
+		} else {
+			restartNFS()
+			fmt.Println("Leader Node NFS Service restart")
 
-		// }
-		// //For nodeMap renewal
-		// nodeStatus("0")
+		}
+		//For nodeMap renewal
+		nodeStatus("0")
 		if nAvailableNodeAdd() {
 			return true, errors.New("All Nodes is Preparing with online")
 		} else {
@@ -251,7 +245,7 @@ func nodeStatusRegister(status string) {
 func isAllNodeOnline(startRange int, endRange int) bool {
 	for i := startRange; i < endRange; i++ {
 		if nodemap[string(i)] == "present" {
-			fmt.Println(nodemap[string(i)])
+			// fmt.Println(nodemap[string(i)])
 			return false
 		}
 	}
@@ -275,6 +269,7 @@ func nAvailableNodeAdd() bool {
 
 	subnetstart := strings.Split(tokenaction.iprange[0], ".")
 	subnetend := strings.Split(tokenaction.iprange[1], ".")
+	//N number of  nodes add
 	if tokenaction.rangeoption {
 		startRange, err := strconv.Atoi(tokenaction.scope[0])
 		endRange, err := strconv.Atoi(tokenaction.scope[1])
@@ -303,6 +298,7 @@ func nAvailableNodeAdd() bool {
 		}
 		return true
 	} else {
+		// Specific the number node add
 		if nodeConnectCheck(tokenaction.scope[0]) && tokenaction.scope[0] != "0" {
 			subnetstart[3] = tokenaction.scope[0]
 			if nodemap[tokenaction.scope[0]] == "present" && verifyNPort(strings.Join(subnetstart, "."), "2222") {
@@ -312,7 +308,7 @@ func nAvailableNodeAdd() bool {
 
 			}
 		} else {
-
+			// range option is zero, Add all nodes
 			fmt.Println(subnetstart, "   ", subnetend)
 			startip, err := strconv.Atoi(subnetstart[3])
 			endip, err := strconv.Atoi(subnetend[3])
@@ -361,11 +357,11 @@ func printOutput(outs string) {
 func hccContainerVerify() (bool, error) {
 
 	if fileExists("/proc/nodes/self/nodeid") {
-		fmt.Println("Kerrighed Container load")
+		fmt.Println("Hcloud Container load")
 		return true, nil
 	}
 
-	return false, errors.New("Not Kerrighed Container")
+	return false, errors.New("Not Hcloud Container")
 }
 
 func extractToken(srcstr string, delimiter string, index int) string {
