@@ -3,6 +3,7 @@ package controlcli
 import (
 	"errors"
 	"fmt"
+	"hcc/viola/lib/logger"
 	"hcc/viola/model"
 	"os"
 	"os/exec"
@@ -31,9 +32,9 @@ func HccCli(parseaction model.Control) (bool, interface{}) {
 	clearAction()
 	ActionClassify(parseaction)
 	//Debug Option
-	// fmt.Println("Receive : ", action)
+	// logger.Logger.Println("Receive : ", action)
 
-	fmt.Println(tokenaction.area, tokenaction.class, tokenaction.scope)
+	logger.Logger.Println(tokenaction.area, tokenaction.class, tokenaction.scope)
 	ishcccluster, err := hccContainerVerify()
 	if err != nil {
 		return false, errors.New("ActionParcer Faild")
@@ -46,7 +47,7 @@ func HccCli(parseaction model.Control) (bool, interface{}) {
 		case "cluster":
 			cmdCluster(tokenaction.class, tokenaction.scope)
 		default:
-			fmt.Println("Please choose the area {nodes or cluster}")
+			logger.Logger.Println("Please choose the area {nodes or cluster}")
 		}
 	} else {
 		return false, errors.New("Please Continue in Kerrighed Container")
@@ -84,10 +85,10 @@ func hccActionparser(parseaction model.HccAction) interface{} {
 		return errors.New("[hccActionparser] Invaild scope, Failed parse scope")
 	}
 	//Debug : tokenaction Structure
-	fmt.Println("area =>", tokenaction.area)
-	fmt.Println("class => ", tokenaction.class)
-	fmt.Println("scope => ", tokenaction.scope)
-	fmt.Println("iprange => ", tokenaction.iprange)
+	logger.Logger.Println("area =>", tokenaction.area)
+	logger.Logger.Println("class => ", tokenaction.class)
+	logger.Logger.Println("scope => ", tokenaction.scope)
+	logger.Logger.Println("iprange => ", tokenaction.iprange)
 
 	return nil
 }
@@ -137,10 +138,10 @@ func cmdNodes() (bool, interface{}) {
 		}
 	case "add":
 		if checkNFS() {
-			fmt.Println("Leader Node NFS Service On")
+			logger.Logger.Println("Leader Node NFS Service On")
 		} else {
 			restartNFS()
-			fmt.Println("Leader Node NFS Service restart")
+			logger.Logger.Println("Leader Node NFS Service restart")
 
 		}
 		//For nodeMap renewal
@@ -165,7 +166,7 @@ func addNodes(actscope string) interface{} {
 	cmd := exec.Command("krgadm", "nodes", "add", "-n", actscope)
 	result, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println("Node Can't add the Num of [", actscope, "] Node")
+		logger.Logger.Println("Node Can't add the Num of [", actscope, "] Node")
 		return err
 	}
 	return result
@@ -175,7 +176,7 @@ func checkNFS() bool {
 	cmd := exec.Command("service", "nfs-common", "status")
 	result, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println("NFS Service error")
+		logger.Logger.Println("NFS Service error")
 
 	} else {
 		if strings.Contains(string(result), "all daemons running") {
@@ -189,7 +190,7 @@ func restartNFS() {
 	cmd := exec.Command("service", "nfs-common", "restart")
 	_, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println("NFS Service Can't start")
+		logger.Logger.Println("NFS Service Can't start")
 
 	}
 
@@ -201,11 +202,11 @@ func nodeStatus(index string) (bool, interface{}) {
 	cmd := exec.Command("krgadm", "nodes", "status")
 	result, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println("Node status error Occured!!")
+		logger.Logger.Println("Node status error Occured!!")
 	}
 
 	if index == "0" {
-		fmt.Println("HCC All Nodes Status \nIP  status\n", string(result))
+		logger.Logger.Println("HCC All Nodes Status \nIP  status\n", string(result))
 		nodeStatusRegister(string(result))
 		return true, string(result)
 	} else {
@@ -214,7 +215,7 @@ func nodeStatus(index string) (bool, interface{}) {
 			for _, words := range tmpstr {
 				retoken := strings.Split(string(words), ":")
 				if string(words[0]) == index {
-					fmt.Println(index, " th node status = > ", retoken[1])
+					logger.Logger.Println(index, " th node status = > ", retoken[1])
 					return true, string(retoken[1])
 				}
 			}
@@ -236,8 +237,8 @@ func nodeStatusRegister(status string) {
 			// if string(words[0]) != "1" {}
 			nodemap[string(words[0])] = retoken[1]
 
-			fmt.Println("words => ", string(words[0]), "retoken => ", retoken[1])
-			fmt.Println("register => ", nodemap[string(words[0])])
+			logger.Logger.Println("words => ", string(words[0]), "retoken => ", retoken[1])
+			logger.Logger.Println("register => ", nodemap[string(words[0])])
 
 		}
 	}
@@ -245,7 +246,7 @@ func nodeStatusRegister(status string) {
 func isAllNodeOnline(startRange int, endRange int) bool {
 	for i := startRange; i < endRange; i++ {
 		if nodemap[string(i)] == "present" {
-			// fmt.Println(nodemap[string(i)])
+			// logger.Logger.Println(nodemap[string(i)])
 			return false
 		}
 	}
@@ -253,7 +254,7 @@ func isAllNodeOnline(startRange int, endRange int) bool {
 }
 func nodeConnectCheck(actscope string) bool {
 	for key := range nodemap {
-		// fmt.Println(key, val)
+		// logger.Logger.Println(key, val)
 		if key == actscope {
 			return true
 		}
@@ -274,17 +275,17 @@ func nAvailableNodeAdd() bool {
 		startRange, err := strconv.Atoi(tokenaction.scope[0])
 		endRange, err := strconv.Atoi(tokenaction.scope[1])
 		if err != nil {
-			fmt.Println("Available node Can't parse")
+			logger.Logger.Println("Available node Can't parse")
 			return false
 		}
 		//Compute node Is available?
 		retry := 0
-		fmt.Println("startRange : ", startRange, " | endRange  ", endRange, " | subnet : ", subnetstart)
+		logger.Logger.Println("startRange : ", startRange, " | endRange  ", endRange, " | subnet : ", subnetstart)
 		for i := 0; i < len(subnetstart); i++ {
-			fmt.Println("subnet[", i, "]  ", subnetstart[i])
+			logger.Logger.Println("subnet[", i, "]  ", subnetstart[i])
 		}
 		for !isAllNodeOnline(startRange, endRange) {
-			fmt.Println("Availabe Node Add retry : [", retry+1, "/10]")
+			logger.Logger.Println("Availabe Node Add retry : [", retry+1, "/10]")
 			if retry > 10 {
 				return false
 			}
@@ -303,23 +304,23 @@ func nAvailableNodeAdd() bool {
 			subnetstart[3] = tokenaction.scope[0]
 			if nodemap[tokenaction.scope[0]] == "present" && verifyNPort(strings.Join(subnetstart, "."), "2222") {
 				result := addNodes(tokenaction.scope[0])
-				fmt.Println("Action Result : ", result)
+				logger.Logger.Println("Action Result : ", result)
 				return true
 
 			}
 		} else {
 			// range option is zero, Add all nodes
-			fmt.Println(subnetstart, "   ", subnetend)
+			logger.Logger.Println(subnetstart, "   ", subnetend)
 			startip, err := strconv.Atoi(subnetstart[3])
 			endip, err := strconv.Atoi(subnetend[3])
-			fmt.Println(startip, " to ", endip)
+			logger.Logger.Println(startip, " to ", endip)
 
 			if err != nil {
 
 			}
 			retry := 0
 			for !isAllNodeOnline(startip, endip) {
-				fmt.Println("Availabe Node Add retry : [", retry+1, "/10]")
+				logger.Logger.Println("Availabe Node Add retry : [", retry+1, "/10]")
 				if retry > 10 {
 					return false
 				}
@@ -343,7 +344,7 @@ func nAvailableNodeAdd() bool {
 	// 	if val == "present" && key != "1" {
 	// 		return false
 	// 	}
-	// 	fmt.Println("Codex => ", key, val)
+	// 	logger.Logger.Println("Codex => ", key, val)
 	// }
 	//
 }
@@ -357,7 +358,7 @@ func printOutput(outs string) {
 func hccContainerVerify() (bool, error) {
 
 	if fileExists("/proc/nodes/self/nodeid") {
-		fmt.Println("Hcloud Container load")
+		logger.Logger.Println("Hcloud Container load")
 		return true, nil
 	}
 
@@ -381,17 +382,17 @@ func fileExists(filename string) bool {
 // result, err := cmd.CombinedOutput()
 // qwe := strings.Split(string(result), "\n")
 // for i, words := range qwe {
-// 	fmt.Println(i, "= > ", words)
+// 	logger.Logger.Println(i, "= > ", words)
 // }
 // if err != nil {
-// 	fmt.Println("Error occured!!")
+// 	logger.Logger.Println("Error occured!!")
 // }
 
 func verifyNPort(ip string, port string) bool {
 	cmd := exec.Command("nmap", ip)
 	result, err := cmd.CombinedOutput()
 	if err != nil {
-		fmt.Println(ip, " has not configure the ", port)
+		logger.Logger.Println(ip, " has not configure the ", port)
 	}
 	//compute on?
 	if strings.Contains(string(result), port) {
