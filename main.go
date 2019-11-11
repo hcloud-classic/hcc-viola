@@ -23,7 +23,7 @@ func main() {
 
 	config.Parser()
 	status, err := controlcli.TelegrafCheck()
-	logger.Logger.Println(err)
+	logger.Logger.Println(status, err)
 
 	for i := 0; i < 100; i++ {
 		err := rabbitmq.PrepareChannel()
@@ -43,7 +43,7 @@ func main() {
 		_ = rabbitmq.Connection.Close()
 	}()
 
-	err := rabbitmq.ConsumeAction()
+	err = rabbitmq.ConsumeAction()
 	if err != nil {
 		logger.Logger.Println(err)
 	}
