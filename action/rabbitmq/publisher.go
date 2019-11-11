@@ -11,7 +11,7 @@ import (
 // PublishViolin : Provide Some Action to violin
 func PublishViolin(action model.Control) error {
 	qCreate, err := Channel.QueueDeclare(
-		"to_violin",
+		"viola_to_violin",
 		false,
 		false,
 		false,

@@ -114,7 +114,14 @@ func ConsumeAction() error {
 				control.Control.ActionResult = "Success"
 			}
 			logger.Logger.Println("Will Publish Strcut : ", control, "\n To : [", control.Receiver, "]")
-			PublishViolin(control)
+			switch control.Receiver {
+			case "violin":
+				PublishViolin(control)
+			// To-Do
+			//  if another modules want to receive action result, implementation code write here
+			default:
+				logger.Logger.Println("No Receiver")
+			}
 
 		}
 	}()
