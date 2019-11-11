@@ -5,13 +5,14 @@ import (
 	"hcc/viola/lib/config"
 	"hcc/viola/lib/controlcli"
 	"hcc/viola/lib/logger"
+	"hcc/viola/lib/syscheck"
 	"time"
 )
 
 func main() {
-	// if !syscheck.CheckRoot() {
-	// 	return
-	// }
+	if !syscheck.CheckRoot() {
+		return
+	}
 
 	if !logger.Prepare() {
 		return
