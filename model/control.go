@@ -21,9 +21,10 @@ type Action struct {
 	// hcc =>  cludter control action
 	// normal => ls -al
 	// normal => scp xxx root@123.456.789.123:/root/
-	ActionType string       `json:"action_type"`
-	NormalType NormalAction `json:"normal_action"`
-	HccType    HccAction    `json:"hcc_action"`
+	ActionType   string       `json:"action_type"`
+	NormalType   NormalAction `json:"normal_action"`
+	HccType      HccAction    `json:"hcc_action"`
+	ActionResult string       `json:"action_result"`
 }
 
 // Control : Struct of Control

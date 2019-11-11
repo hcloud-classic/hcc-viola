@@ -3,6 +3,7 @@ package main
 import (
 	"hcc/viola/action/rabbitmq"
 	"hcc/viola/lib/config"
+	"hcc/viola/lib/controlcli"
 	"hcc/viola/lib/logger"
 	"time"
 )
@@ -20,17 +21,8 @@ func main() {
 	}()
 
 	config.Parser()
-
-	// err := rabbitmq.PrepareChannel()
-	// if err != nil {
-	// 	logger.Logger.Panic(err)
-	// }
-	// defer func() {
-	// 	_ = rabbitmq.Channel.Close()
-	// }()
-	// defer func() {
-	// 	_ = rabbitmq.Connection.Close()
-	// }()
+	status, err := controlcli.TelegrafCheck()
+	logger.Logger.Println(err)
 
 	for i := 0; i < 100; i++ {
 		err := rabbitmq.PrepareChannel()

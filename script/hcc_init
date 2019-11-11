@@ -34,8 +34,6 @@ OPTIONS="-name ${NAME} -depth ${DEPTH} -geometry ${GEOMETRY} :${DISPLAY}"
 
 
 d_start() {
-	/usr/local/sbin/isprocess vnc 
-	EXESTAT=$?
 d_status
 ret=$?
 if [ $ret = 9 ];then
@@ -47,7 +45,7 @@ if [ $ret = 9 ];then
 		STATUS=1
 		log_failure_msg "VNC Server Start Failed"
 	fi
-
+	
 else
 	STATUS=$EXESTAT
 	return ${STATUS:-0}

@@ -1,6 +1,7 @@
 package rabbitmq
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"hcc/viola/lib/controlcli"
@@ -95,20 +96,26 @@ func ConsumeAction() error {
 				logger.Logger.Println("ConsumeAction: Failed to unmarshal run_hcc_cli data")
 				// return
 			}
-			fmt.Println("RabbitmQ : ", control)
-
-			status, err := controlcli.HccCli(control)
-			if !status && err != nil {
-				logger.Logger.Println("ConsumeAction: Faild execution command [", "]")
-			} else {
-				logger.Logger.Println("ConsumeAction: Success execution command [", "]")
+			var pretty bytes.Buffer
+			error := json.Indent(&pretty, d.Body, "", "\t")
+			if error != nil {
+				log.Println("JSON parse error: ", error)
+				return
 			}
+			fmt.Println("RabbitmQ : ", control)
+			logger.Logger.Println("RabbitmQ : ", string(pretty.Bytes()))
+			status, err := controlcli.HccCli(control)
+			errstr := fmt.Sprintf("%v", err)
+			if !status && err != nil {
+				logger.Logger.Println("ConsumeAction: Faild execution command [", errstr, "]")
+				control.Control.ActionResult = "Failed"
+			} else {
+				logger.Logger.Println("ConsumeAction: Success execution command [", errstr, "]")
+				control.Control.ActionResult = "Success"
+			}
+			logger.Logger.Println("Will Publish Strcut : ", control, "\n To : [", control.Receiver, "]")
+			PublishViolin(control)
 
-			// PublishViolin(control)
-
-			//TODO: queue get_nodes to flute module
-
-			//logger.Logger.Println("update_subnet: UUID = " + subnet.UUID + ": " + result)
 		}
 	}()
 
