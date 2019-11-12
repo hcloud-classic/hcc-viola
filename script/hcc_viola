@@ -37,7 +37,7 @@ d_stop() {
 }
 
 #
-# Function that prints if kerrighed is started or not
+# Function that prints if Hcloud is started or not
 #
 d_status() {
     ret=$?

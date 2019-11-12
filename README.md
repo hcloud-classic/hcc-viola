@@ -10,7 +10,7 @@
 
 ## CLI
 
-krgadm
+
 
 
 

@@ -53,10 +53,4 @@ func main() {
 	logger.Logger.Println(" [*] Waiting for messages. To exit press Ctrl+C")
 	<-forever
 
-	// controlcli.HccCli("hcc nodes status 0")
-	// // controlcli.NodeInit()
-	// controlcli.HccCli("hcc nodes add 2")
-	// fmt.Println("Result\n")
-	// controlcli.HccCli("hcc nodes status 0")
-	// controlcli.HccCli("krgadm nodes add -n 1:2")
 }

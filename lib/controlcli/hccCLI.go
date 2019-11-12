@@ -58,7 +58,7 @@ func HccCli(parseaction model.Control) (bool, interface{}) {
 			logger.Logger.Println("Please choose the area {nodes or cluster}")
 		}
 	} else {
-		return false, errors.New("Please Continue in Kerrighed Container")
+		return false, errors.New("Please Continue in Hcloud Container")
 	}
 
 	return false, nil
@@ -68,17 +68,38 @@ func normalActionparser() interface{} {
 	return nil
 }
 
+func isipv4(host string) bool {
+	parts := strings.Split(host, ".")
+
+	if len(parts) < 4 {
+		return false
+	}
+
+	for _, x := range parts {
+		if i, err := strconv.Atoi(x); err == nil {
+			if i < 0 || i > 255 {
+				return false
+			}
+		} else {
+			return false
+		}
+
+	}
+	return true
+}
+
 func hccActionparser(parseaction model.HccAction) interface{} {
 	logger.Logger.Println("hccActionparser : ", parseaction, "  parseaction.ActionArea : ", parseaction.ActionArea)
 	tokenaction.area = parseaction.ActionArea
 	tokenaction.class = parseaction.ActionClass
 	//ip range parse
-	if strings.Contains(parseaction.HccIPRange, "range") {
-		splitip := strings.Split(parseaction.HccIPRange, " ")
+	splitip := strings.Split(parseaction.HccIPRange, " ")
+	if isipv4(splitip[0]) && isipv4(splitip[1]) {
+
+		tokenaction.iprange = append(tokenaction.iprange, splitip[0])
 		tokenaction.iprange = append(tokenaction.iprange, splitip[1])
-		tokenaction.iprange = append(tokenaction.iprange, splitip[2])
 	} else {
-		return errors.New("[hccActionparser] Invaild Ip rande, Failed parse iprange")
+		return errors.New("[hccActionparser] Invaild Ip range, Failed parse iprange")
 	}
 
 	//Action effective scope parsing
@@ -173,7 +194,7 @@ func cmdCluster(actclass string, actscope []string) {
 }
 
 func addNodes(actscope string) interface{} {
-	cmd := exec.Command("krgadm", "nodes", "add", "-n", actscope)
+	cmd := exec.Command("hccadm", "nodes", "add", "-n", actscope)
 	result, err := cmd.CombinedOutput()
 	if err != nil {
 		logger.Logger.Println("Node Can't add the Num of [", actscope, "] Node")
@@ -202,7 +223,7 @@ func checkNFS() bool {
 // @ N node nodeStatus index == n
 // @ all node status index == 0
 func nodeStatus(index string) (bool, interface{}) {
-	cmd := exec.Command("krgadm", "nodes", "status")
+	cmd := exec.Command("hccadm", "nodes", "status")
 	result, err := cmd.CombinedOutput()
 	if err != nil {
 		logger.Logger.Println("Node status error Occured!!")
@@ -422,7 +443,7 @@ func nodeVerifyAdd(mapnum string, subnetstart []string) interface{} {
 	return "Faild Add Node" + mapnum
 }
 
-//TelegrafCheck :telegraf config file check
+//TelegrafCheck :telegraf config
 func TelegrafCheck() (bool, interface{}) {
 	if !fileExists(telegrafDir + "/telegraf.conf") {
 		return false, errors.New("Telegraf setting is failed, Please check " + telegrafDir + "/telegraf.conf")

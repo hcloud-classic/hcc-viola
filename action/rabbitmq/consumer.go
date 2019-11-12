@@ -111,7 +111,7 @@ func ConsumeAction() error {
 				control.Control.ActionResult = "Failed"
 			} else {
 				logger.Logger.Println("ConsumeAction: Success execution command [", errstr, "]")
-				control.Control.ActionResult = "Success"
+				control.Control.ActionResult = "Running"
 			}
 			logger.Logger.Println("Will Publish Strcut : ", control, "\n To : [", control.Receiver, "]")
 			switch control.Receiver {
