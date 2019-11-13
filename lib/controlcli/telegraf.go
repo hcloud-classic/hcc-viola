@@ -18,7 +18,7 @@ var agent = "[agent]\n" +
 
 var outputsInfluxdb = "[[outputs.influxdb]]\n" +
 	"# Address of influxdb\n" +
-	"urls = [\"http://INFLUX_DB_IP:8086\"]\n" +
+	"urls = [\"http://INFLUX_DB_IP:PORT\"]\n" +
 	"database = \"SERVER_UUID\"\n" +
 	"skip_database_creation = false\n"
 

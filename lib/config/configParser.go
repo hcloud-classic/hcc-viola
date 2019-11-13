@@ -23,6 +23,23 @@ func parseHTTP() {
 	}
 }
 
+func parseInfluxDB() {
+	config.InfluxDBConfig = conf.Get("influxdb")
+	if config.InfluxDBConfig == nil {
+		logger.Logger.Panicln("no influxdb section")
+	}
+
+	InfluxDB = influxdb{}
+	InfluxDB.IP, err = config.InfluxDBConfig.String("influxdb_ip")
+	if err != nil {
+		logger.Logger.Panicln(err)
+	}
+	InfluxDB.Port, err = config.InfluxDBConfig.String("influxdb_port")
+	if err != nil {
+		logger.Logger.Panicln(err)
+	}
+}
+
 func parseRabbitMQ() {
 	config.RabbitMQConfig = conf.Get("rabbitmq")
 	if config.RabbitMQConfig == nil {
@@ -59,4 +76,5 @@ func Parser() {
 
 	parseHTTP()
 	parseRabbitMQ()
+	parseInfluxDB()
 }

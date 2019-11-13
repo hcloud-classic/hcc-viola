@@ -3,6 +3,7 @@ package controlcli
 import (
 	"errors"
 	"fmt"
+	"hcc/viola/lib/config"
 	"hcc/viola/lib/logger"
 	"hcc/viola/model"
 	"io/ioutil"
@@ -260,8 +261,8 @@ func nodeStatusRegister(status string) {
 
 			nodemap[string(words[0])] = retoken[1]
 
-			logger.Logger.Println("words => ", string(words[0]), "retoken => ", retoken[1])
-			logger.Logger.Println("register => ", nodemap[string(words[0])])
+			// logger.Logger.Println("words => ", string(words[0]), "retoken => ", retoken[1])
+			// logger.Logger.Println("register => ", nodemap[string(words[0])])
 
 		}
 	}
@@ -356,10 +357,10 @@ func nAvailableNodeAdd() bool {
 			return true
 		} else {
 
-			logger.Logger.Println(subnetstart, "   ", subnetend)
+			// logger.Logger.Println(subnetstart, "   ", subnetend)
 			startip, err := strconv.Atoi(subnetstart[3])
 			endip, err := strconv.Atoi(subnetend[3])
-			logger.Logger.Println(startip, " to ", endip)
+			// logger.Logger.Println(startip, " to ", endip)
 
 			if err != nil {
 
@@ -389,7 +390,6 @@ func nAvailableNodeAdd() bool {
 			return true
 		}
 
-		return false
 	}
 
 }
@@ -466,6 +466,8 @@ func telegrafSetting(parseaction model.Control) (bool, interface{}) {
 	} else {
 		teleconf := agent + outputsInfluxdb + cpuInfo + inputsDisk + etcSet
 		teleconf = strings.Replace(teleconf, "SERVER_UUID", parseaction.Control.HccType.ServerUUID, -1)
+		teleconf = strings.Replace(teleconf, "INFLUX_DB_IP", config.InfluxDB.IP, -1)
+		teleconf = strings.Replace(teleconf, "PORT", config.InfluxDB.Port, -1)
 		ioutil.WriteFile(telegrafDir+"/telegraf.conf", []byte(teleconf), 644)
 		restartService("telegraf")
 		return true, "Telegraf Setting is complete!!\n"

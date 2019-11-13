@@ -8,25 +8,23 @@ type violaConfig struct {
 	HTTPConfig     *goconf.Section
 	RabbitMQConfig *goconf.Section
 	ViolinConfig   *goconf.Section
+	InfluxDBConfig *goconf.Section
 }
 
 /*-----------------------------------
          Config File Example
 
 ##### CONFIG START #####
-[mysql]
-id user
-password pass
-address 111.111.111.111
-port 9999
-database db_name
-
 [http]
-port 8888
+port 7000
 
 [rabbitmq]
-rabbitmq_id user
-rabbitmq_password pass
-rabbitmq_address 555.555.555.555
-rabbitmq_port 15672
+rabbitmq_id admin
+rabbitmq_password qwe1212!Q
+rabbitmq_address 192.168.110.10
+rabbitmq_port 5672
+
+[influxdb]
+influxdb_ip 192.168.110.10
+
 -----------------------------------*/
