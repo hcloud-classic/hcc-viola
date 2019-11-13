@@ -17,7 +17,9 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/etc/viola
 
 d_start() {
 #su root -c "/etc/hcc/viola/viola"
-exec /etc/hcc/viola/viola &
+#exec /etc/hcc/viola/viola &
+#/etc/hcc/viola/viola &
+su root -c "/usr/bin/nohup /etc/hcc/viola/viola >/dev/null 2>&1 &"
 STATUS=$?
     return ${STATUS:-0}
 }

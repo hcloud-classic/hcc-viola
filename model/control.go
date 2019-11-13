@@ -9,7 +9,7 @@ type HccAction struct {
 	ActionArea  string `json:"action_area"`  // Nodes for Cluster realem
 	ActionClass string `json:"action_class"` //add, del, status, poweroff, reboot
 	ActionScope string `json:"action_scope"` // n, n:n+2, if n is '0' all node add
-	HccIPRange  string `json:"iprange"`      // range xxx.xxx.xxx.xxx yyy.yyy.yyy.yyy
+	HccIPRange  string `json:"iprange"`      // xxx.xxx.xxx.xxx yyy.yyy.yyy.yyy
 	ServerUUID  string `json:"server_uuid"`
 }
 

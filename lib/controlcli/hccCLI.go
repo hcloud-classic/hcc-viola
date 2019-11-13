@@ -90,7 +90,7 @@ func isipv4(host string) bool {
 }
 
 func hccActionparser(parseaction model.HccAction) interface{} {
-	logger.Logger.Println("hccActionparser : ", parseaction, "  parseaction.ActionArea : ", parseaction.ActionArea)
+	// logger.Logger.Println("hccActionparser : ", parseaction, "  parseaction.ActionArea : ", parseaction.ActionArea)
 	tokenaction.area = parseaction.ActionArea
 	tokenaction.class = parseaction.ActionClass
 	//ip range parse
@@ -116,10 +116,10 @@ func hccActionparser(parseaction model.HccAction) interface{} {
 		return errors.New("[hccActionparser] Invaild scope, Failed parse scope")
 	}
 	//Debug : tokenaction Structure
-	logger.Logger.Println("area =>", tokenaction.area)
-	logger.Logger.Println("class => ", tokenaction.class)
-	logger.Logger.Println("scope => ", tokenaction.scope)
-	logger.Logger.Println("iprange => ", tokenaction.iprange)
+	// logger.Logger.Println("area =>", tokenaction.area)
+	// logger.Logger.Println("class => ", tokenaction.class)
+	// logger.Logger.Println("scope => ", tokenaction.scope)
+	// logger.Logger.Println("iprange => ", tokenaction.iprange)
 
 	return nil
 }
@@ -456,7 +456,7 @@ func telegrafSetting(parseaction model.Control) (bool, interface{}) {
 		strtmp := fmt.Sprintf("%v", err)
 		return false, errors.New(strtmp)
 	}
-	b, err := ioutil.ReadFile("telegraf.conf") // just pass the file name
+	b, err := ioutil.ReadFile(telegrafDir + "/telegraf.conf") // just pass the file name
 	if err != nil {
 		fmt.Print(err)
 	}

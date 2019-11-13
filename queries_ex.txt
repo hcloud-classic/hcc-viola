@@ -1,48 +1,15 @@
-//// volume
-// list
-query List_Volume {
-  list_volume {
-    uuid
-    size
-    type
-    server_uuid
-  }
-}
-
-// read
-query Select_Volume {
-  volume(uuid: "7284772e-3811-4030-a311-2da8ff705850") {
-    uuid
-    size
-    type
-    server_uuid
-  }
-}
-
-// create
-mutation Create_Volume {
-  create_volume(size: 1024000, type: "ext4", server_uuid: "7284772e-3811-4030-a311-2da8ff705850") {
-    size
-    type
-    server_uuid
-  }
-}
-
-// update
-mutation Update_Volume {
-  update_volume(uuid: "1dad3b09-acaf-44fe-9fdd-5d3a1323e5a2", size: 1024, type: "zfs", server_uuid: "7284772e-3811-4030-a311-2da8ff705850") {
-    uuid
-    size
-    type
-    server_uuid
-  }
-}
-
-// delete
+// Create Server
 mutation _ {
-  delete_volume(uuid: "05333605-561d-4e8c-b566-07c92d915657") {
+  create_server(subnet_uuid: "36b83a39-750c-4588-6243-a3272a4a3e4f", os: "ubuntu", server_name: "codex server", server_desc: "test server", cpu: 1, memory: 4, disk_size: 10, status: "creating", user_uuid: "codex") {
     uuid
+    subnet_uuid
+    os
+    server_name
+    server_desc
+    cpu
+    memory
+    disk_size
+    status
+    user_uuid
   }
 }
-
-// test
