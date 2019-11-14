@@ -7,7 +7,7 @@ var configLocation = "/etc/hcc/viola/viola.conf"
 type violaConfig struct {
 	HTTPConfig     *goconf.Section
 	RabbitMQConfig *goconf.Section
-	ViolinConfig   *goconf.Section
+	ViolaConfig    *goconf.Section
 	InfluxDBConfig *goconf.Section
 }
 

@@ -40,7 +40,7 @@ func GetClusterIP() error {
 
 	go func() {
 		for d := range msgsCreate {
-			log.Printf("get_cluster_ip: Received a create message: %s", d.Body)
+			log.Printf("get_cluster_ip: Received a create message: %s\n", d.Body)
 
 			var subnet model.Subnet
 			err = json.Unmarshal(d.Body, &subnet)

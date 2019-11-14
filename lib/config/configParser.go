@@ -68,6 +68,24 @@ func parseRabbitMQ() {
 	}
 }
 
+func parseViola() {
+	config.ViolaConfig = conf.Get("viola")
+	if config.ViolaConfig == nil {
+		logger.Logger.Panicln("no viola section")
+	}
+
+	Viola = viola{}
+	Viola.NodeAddRetryCount, err = config.ViolaConfig.Int("viola_node_add_retry_count")
+	if err != nil {
+		logger.Logger.Panicln(err)
+	}
+
+	Viola.NodeAddRetryWaitSec, err = config.ViolaConfig.Int("viola_node_add_retry_wait_sec")
+	if err != nil {
+		logger.Logger.Panicln(err)
+	}
+}
+
 // Parser : Parse config file
 func Parser() {
 	if err = conf.Parse(configLocation); err != nil {
