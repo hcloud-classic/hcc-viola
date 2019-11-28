@@ -5,12 +5,12 @@ var telegrafDir = "/etc/telegraf"
 var globalTags = "[global_tags]\n"
 
 var agent = "[agent]\n" +
-	"interval = \"10s\"\n" +
+	"interval = \"1s\"\n" +
 	"round_interval = true\n" +
 	"metric_batch_size = 1000\n" +
 	"metric_buffer_limit = 10000\n" +
 	"collection_jitter = \"0s\"\n" +
-	"flush_interval = \"10s\"\n" +
+	"flush_interval = \"1s\"\n" +
 	"flush_jitter = \"0s\"\n" +
 	"precision = \"\"\n" +
 	"hostname = \"SERVER_UUID\"\n" +
