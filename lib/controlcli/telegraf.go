@@ -19,7 +19,7 @@ var agent = "[agent]\n" +
 var outputsInfluxdb = "[[outputs.influxdb]]\n" +
 	"# Address of influxdb\n" +
 	"urls = [\"http://INFLUX_DB_IP:PORT\"]\n" +
-	"database = \"SERVER_UUID\"\n" +
+	"database = \"telegraf\"\n" +
 	"skip_database_creation = false\n"
 
 var cpuInfo = "[[inputs.cpu]]\n" +
