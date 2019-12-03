@@ -31,6 +31,9 @@ var cpuInfo = "[[inputs.cpu]]\n" +
 var inputsDisk = "[[inputs.disk]]\n" +
 	"ignore_fs = [\"tmpfs\", \"devtmpfs\", \"devfs\", \"iso9660\", \"overlay\", \"aufs\", \"squashfs\"]\n"
 
+var netInfo = "[[inputs.net]]\n" +
+	"   interfaces = [\"eth0\"]\n"
+
 var etcSet = "# Info detail setting\n" +
 	"[[inputs.diskio]]\n" +
 	"[[inputs.kernel]]\n" +

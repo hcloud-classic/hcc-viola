@@ -472,7 +472,7 @@ func telegrafSetting(parseaction model.Control) (bool, interface{}) {
 		return true, "Already setting complete\n"
 	}
 
-	teleconf := agent + outputsInfluxdb + cpuInfo + inputsDisk + etcSet
+	teleconf := agent + outputsInfluxdb + cpuInfo + inputsDisk + netInfo + etcSet
 	teleconf = strings.Replace(teleconf, "SERVER_UUID", parseaction.Control.HccType.ServerUUID, -1)
 	teleconf = strings.Replace(teleconf, "INFLUX_DB_IP", config.InfluxDB.IP, -1)
 	teleconf = strings.Replace(teleconf, "PORT", config.InfluxDB.Port, -1)
