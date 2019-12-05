@@ -8,6 +8,7 @@ import (
 	"github.com/streadway/amqp"
 )
 
+// PublishViolin : Provide Some Action to violin
 func PublishViolin(action model.Control) error {
 	qCreate, err := Channel.QueueDeclare(
 		"viola_to_violin",

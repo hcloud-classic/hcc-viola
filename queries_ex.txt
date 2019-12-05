@@ -1,0 +1,15 @@
+// Create Server
+mutation _ {
+  create_server(subnet_uuid: "36b83a39-750c-4588-6243-a3272a4a3e4f", os: "ubuntu", server_name: "codex server", server_desc: "test server", cpu: 1, memory: 4, disk_size: 10, status: "creating", user_uuid: "codex") {
+    uuid
+    subnet_uuid
+    os
+    server_name
+    server_desc
+    cpu
+    memory
+    disk_size
+    status
+    user_uuid
+  }
+}

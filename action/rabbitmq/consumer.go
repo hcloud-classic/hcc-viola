@@ -11,6 +11,7 @@ import (
 	"time"
 )
 
+// GetClusterIP : Consume 'update_subnet' queues from RabbitMQ channel
 func GetClusterIP() error {
 	qCreate, err := Channel.QueueDeclare(
 		"get_cluster_ip",
@@ -49,12 +50,16 @@ func GetClusterIP() error {
 				return
 			}
 
+			//TODO: queue get_nodes to flute module
+
+			//logger.Logger.Println("update_subnet: UUID = " + subnet.UUID + ": " + result)
 		}
 	}()
 
 	return nil
 }
 
+//ConsumeAction : Hcc Integration of CLI
 func ConsumeAction() error {
 	qCreate, err := Channel.QueueDeclare(
 		"to_viola",
@@ -90,6 +95,7 @@ func ConsumeAction() error {
 			err = json.Unmarshal(d.Body, &control)
 			if err != nil {
 				logger.Logger.Println("ConsumeAction: Failed to unmarshal run_hcc_cli data")
+				// return
 			}
 			var pretty bytes.Buffer
 			err := json.Indent(&pretty, d.Body, "", "\t")
@@ -98,6 +104,8 @@ func ConsumeAction() error {
 				return
 			}
 			fmt.Println("RabbitmQ : ", control)
+			logger.Logger.Println("RabbitmQ : ", string(pretty.Bytes()))
+			logger.Logger.Println("Codex : ", control.Control.HccType.HccIPRange)
 			status, hccClierr := controlcli.HccCli(control)
 			errstr := fmt.Sprintf("%v", hccClierr)
 			if !status && hccClierr != nil {
@@ -120,6 +128,8 @@ func ConsumeAction() error {
 						break
 					}
 				}
+			// To-Do
+			//  if another modules want to receive action result, implementation code write here
 			default:
 				logger.Logger.Println("No Receiver")
 			}

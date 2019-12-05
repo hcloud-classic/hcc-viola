@@ -5,7 +5,6 @@ var telegrafDir = "/etc/telegraf"
 var globalTags = "[global_tags]\n"
 
 var agent = "[agent]\n" +
-	// "logfile = \"/var/log/telegraf/LOG_FILE\"\n" +
 	"interval = \"1s\"\n" +
 	"round_interval = true\n" +
 	"metric_batch_size = 1000\n" +
@@ -35,19 +34,10 @@ var inputsDisk = "[[inputs.disk]]\n" +
 var netInfo = "[[inputs.net]]\n" +
 	"   interfaces = [\"eth0\"]\n"
 
-var ping = "[[inputs.ping]]\n" +
-	"   urls = [NODE_LIST]\n" +
-	"	count = 3\n" +
-	"	ping_interval = 0.3\n" +
-	"	timeout = 0.5\n" +
-	"	deadline = 1\n" +
-	"	interface = \"eth0\"\n"
-
 var etcSet = "# Info detail setting\n" +
 	"[[inputs.diskio]]\n" +
 	"[[inputs.kernel]]\n" +
 	"[[inputs.mem]]\n" +
 	"[[inputs.processes]]\n" +
 	"[[inputs.swap]]\n" +
-	"[[inputs.system]]\n" +
-	"[[inputs.net]]"
+	"[[inputs.system]]"

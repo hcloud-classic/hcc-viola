@@ -1,0 +1,11 @@
+#!/bin/bash
+# Location = /usr/local/sbin/isprocess
+# Checkout Specific process is running?
+SERVICE=$1
+if ps ax | grep -v grep | grep -v $0 | grep $SERVICE > /dev/null
+then
+    echo "$SERVICE service running, everything is fine"
+else
+    echo "$SERVICE is not running"
+    exit 9
+fi

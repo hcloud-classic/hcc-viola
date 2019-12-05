@@ -6,4 +6,5 @@ type harp struct {
 	RequestTimeoutMs int64  `goconf:"harp:harp_request_timeout_ms"` // RequestTimeoutMs : HTTP timeout for GraphQL request to harp module
 }
 
+//Harp - codex
 var Harp harp

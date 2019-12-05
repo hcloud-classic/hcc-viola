@@ -1,0 +1,119 @@
+#! /bin/sh
+
+### BEGIN INIT INFO
+# Provides:          vnc-contorl 
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Start Up vnc server
+# Description:       Start Up vnc server
+### END INIT INFO
+# Location = /etc/init.d/hcc_init
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# The display VNC Desktop name
+NAME=`hostname`
+# The display that VNC will use
+DISPLAY="1"
+
+# Color depth (between 8 and 32)
+DEPTH="24"
+
+# The Desktop geometry to use.
+#GEOMETRY="<WIDTH>x<HEIGHT>"
+#GEOMETRY="800x600"
+#GEOMETRY="1024x768"
+#GEOMETRY="1280x1024"
+GEOMETRY="1920x1080"
+OPTIONS="-name ${NAME} -depth ${DEPTH} -geometry ${GEOMETRY} :${DISPLAY}"
+
+
+
+. /lib/lsb/init-functions
+
+
+d_start() {
+d_status
+ret=$?
+if [ $ret = 9 ];then
+	STATUS=0
+	log_progress_msg "VNC Server Starting"
+	su root -c "vncserver ${OPTIONS}"
+	EXESTAT=$?
+	if [ $EXESTAT -gt 0 ];then
+		STATUS=1
+		log_failure_msg "VNC Server Start Failed"
+	fi
+	
+else
+	STATUS=$EXESTAT
+	return ${STATUS:-0}
+fi
+	
+
+
+
+    return ${STATUS:-0}
+}
+
+
+d_restart() {
+d_status
+ret=$?
+if [ $ret = 0 ];then
+d_stop
+d_start
+else
+d_start
+fi
+return $?
+}
+
+#
+# Function that stops the daemon/service.
+#
+d_stop() {
+	su root -c "vncserver -kill :${DISPLAY}"
+	ret=$?
+	return $ret
+}
+
+#
+# Function that prints if Hcloud is started or not
+#
+d_status() {
+    /usr/local/sbin/isprocess vnc 
+    ret=$?
+    return $ret
+}
+
+    case "$1" in
+	start)
+	    log_daemon_msg "Starting $DESC"
+	    d_start || log_end_msg 1
+	    log_end_msg 0
+	    ;;
+	stop)
+	    log_daemon_msg "Stopping $DESC"
+	    d_stop || log_end_msg 1
+	    log_end_msg 0
+	    ;;
+	status)
+	    log_daemon_msg "$DESC status"
+	    d_status
+	    log_end_msg 0
+	    ;;
+	restart)
+	    log_daemon_msg "Restart $DESC"
+	    d_restart || log_end_msg 1
+	    log_success_msg $DESC
+	    log_end_msg 0
+	    ;;
+	*)
+	    log_success_msg "Usage: $SCRIPTNAME {start|stop|restart|status}"
+	    exit 1
+	    ;;
+    esac
+
+exit 0

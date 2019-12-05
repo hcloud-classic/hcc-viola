@@ -26,23 +26,27 @@ type AtomicAction struct {
 	receiver    string
 }
 
+// var actiontype = []string{"area", "class", "scope"}
 var tokenaction AtomicAction
 
+// var nodemap map[string]string
 var nodemap = make(map[string]string)
 
 // HccCli : Hcc integration Command line interface
 func HccCli(parseaction model.Control) (bool, interface{}) {
 	clearAction()
 	ActionClassify(parseaction)
+	//Debug Option
+	// logger.Logger.Println("Receive : ", parseaction)
 
 	logger.Logger.Println(tokenaction.area, tokenaction.class, tokenaction.scope)
 	ishcccluster, err := hccContainerVerify()
 	if err != nil {
 		return false, errors.New("ActionParcer Faild")
 	}
-	istelegrafset, checker := telegrafSetting(parseaction)
+	istelegrafset, checkerr := telegrafSetting(parseaction)
 	if !istelegrafset {
-		logger.Logger.Println(checker)
+		logger.Logger.Println(checkerr)
 	}
 
 	if ishcccluster {
@@ -86,8 +90,10 @@ func isipv4(host string) bool {
 }
 
 func hccActionparser(parseaction model.HccAction) interface{} {
+	// logger.Logger.Println("hccActionparser : ", parseaction, "  parseaction.ActionArea : ", parseaction.ActionArea)
 	tokenaction.area = parseaction.ActionArea
 	tokenaction.class = parseaction.ActionClass
+	//ip range parse
 	splitip := strings.Split(parseaction.HccIPRange, " ")
 	if isipv4(splitip[0]) && isipv4(splitip[1]) {
 
@@ -97,6 +103,7 @@ func hccActionparser(parseaction model.HccAction) interface{} {
 		return errors.New("[hccActionparser] Invaild Ip range, Failed parse iprange")
 	}
 
+	//Action effective scope parsing
 	if parseaction.ActionScope != "" {
 		if strings.Contains(parseaction.ActionScope, ":") {
 			tokenaction.rangeoption = true
@@ -108,6 +115,12 @@ func hccActionparser(parseaction model.HccAction) interface{} {
 	} else {
 		return errors.New("[hccActionparser] Invaild scope, Failed parse scope")
 	}
+	//Debug : tokenaction Structure
+	// logger.Logger.Println("area =>", tokenaction.area)
+	// logger.Logger.Println("class => ", tokenaction.class)
+	// logger.Logger.Println("scope => ", tokenaction.scope)
+	// logger.Logger.Println("iprange => ", tokenaction.iprange)
+
 	return nil
 }
 
@@ -116,6 +129,7 @@ func ActionClassify(parsingmsg model.Control) interface{} {
 	logger.Logger.Println("Receive : ", parsingmsg)
 	tokenaction.publisher = parsingmsg.Publisher
 	tokenaction.receiver = parsingmsg.Receiver
+	//Classify Action Type
 	switch parsingmsg.Control.ActionType {
 	case "hcc":
 		err := hccActionparser(parsingmsg.Control.HccType)
@@ -203,6 +217,8 @@ func checkNFS() bool {
 	return false
 }
 
+// @ N node nodeStatus index == n
+// @ all node status index == 0
 func nodeStatus(index string) (bool, interface{}) {
 	cmd := exec.Command("hccadm", "nodes", "status")
 	result, err := cmd.CombinedOutput()
@@ -240,6 +256,10 @@ func nodeStatusRegister(status string) {
 			retoken := strings.Split(string(words), ":")
 
 			nodemap[string(words[0])] = retoken[1]
+
+			// logger.Logger.Println("words => ", string(words[0]), "retoken => ", retoken[1])
+			// logger.Logger.Println("register => ", nodemap[string(words[0])])
+
 		}
 	}
 }
@@ -249,9 +269,13 @@ func isAllNodeOnline(startRange int, endRange int) bool {
 	var count = 0
 	for i := startRange; i <= endRange; i++ {
 		if nodemap[strconv.Itoa(i)] == "present" {
+			//For Debug
+			// logger.Logger.Println("i : [", i, "] => ", nodemap[strconv.Itoa(i)])
 			return false
 		}
 		if nodemap[strconv.Itoa(i)] == "online" {
+			//For Debug
+			// logger.Logger.Println("i : [", i, "] => ", nodemap[strconv.Itoa(i)])
 			count++
 		}
 	}
@@ -265,6 +289,8 @@ func isAllNodeOnline(startRange int, endRange int) bool {
 
 func nodeConnectCheck(actscope string) bool {
 	for key := range nodemap {
+		//For Debug
+		// logger.Logger.Println(key, val)
 		if key == actscope {
 			return true
 		}
@@ -286,10 +312,14 @@ func rangeAtoiParse(start string, end string) (int, int, error) {
 	return startInt, endInt, nil
 }
 
+// nAvailableNodeAdd : check
 func nAvailableNodeAdd() bool {
+	// 0 =>  all node add
+	//  x:y =>  x~y nodes add
 
 	subnetstart := strings.Split(tokenaction.iprange[0], ".")
 	subnetend := strings.Split(tokenaction.iprange[1], ".")
+	//N number of  nodes add
 	if tokenaction.rangeoption {
 		startRange, endRange, err := rangeAtoiParse(tokenaction.scope[0], tokenaction.scope[1])
 		if err != nil {
@@ -297,6 +327,7 @@ func nAvailableNodeAdd() bool {
 			return false
 		}
 
+		//Compute node Is available?
 		retry := 0
 		logger.Logger.Println("startRange : ", startRange, " | endRange  ", endRange, " | subnet : ", subnetstart)
 
@@ -315,6 +346,7 @@ func nAvailableNodeAdd() bool {
 		}
 		return true
 	}
+	// Specific the number node add
 	if nodeConnectCheck(tokenaction.scope[0]) && tokenaction.scope[0] != "0" {
 		retry := 0
 		specificnode, err := strconv.Atoi(tokenaction.scope[0])
@@ -335,11 +367,13 @@ func nAvailableNodeAdd() bool {
 		return true
 	}
 
+	// logger.Logger.Println(subnetstart, "   ", subnetend)
 	startip, endip, err := rangeAtoiParse(subnetstart[3], subnetend[3])
 	if err != nil {
 		logger.Logger.Println("Available node Can't parse")
 		return false
 	}
+	// logger.Logger.Println(startip, " to ", endip)
 
 	retry := 0
 	for !isAllNodeOnline(startip, endip) {
@@ -355,6 +389,14 @@ func nAvailableNodeAdd() bool {
 		retry++
 		time.Sleep(4 * time.Second)
 	}
+	// Debug For nodeMap
+	// for key, val := range nodemap {
+	// 	// if val == "present" && key != "1" {
+	// 	// 	return false
+	// 	// }
+	// 	logger.Logger.Println("Codex => ", key, val)
+	// }
+	// range option is zero, Add all nodes
 	return true
 }
 
@@ -387,6 +429,7 @@ func verifyNPort(ip string, port string) bool {
 	if err != nil {
 		logger.Logger.Println(ip, " has not configure the ", port)
 	}
+	//compute on?
 	if strings.Contains(string(result), port) {
 		logger.Logger.Println(ip, " : ", port, "Connect")
 
@@ -399,11 +442,14 @@ func verifyNPort(ip string, port string) bool {
 func nodeVerifyAdd(mapnum string, subnetstart []string) interface{} {
 	if nodemap[mapnum] == "present" && verifyNPort(strings.Join(subnetstart, "."), "2222") {
 		result := addNodes(mapnum)
+		//For Debug
+		// logger.Logger.Println("Action Result : ", result)
 		return result
 	}
 	return "Faild Add Node" + mapnum
 }
 
+//TelegrafCheck :telegraf config
 func TelegrafCheck() (bool, interface{}) {
 	if !fileExists(telegrafDir + "/telegraf.conf") {
 		return false, errors.New("Telegraf setting is failed, Please check " + telegrafDir + "/telegraf.conf")
@@ -417,7 +463,7 @@ func telegrafSetting(parseaction model.Control) (bool, interface{}) {
 		strtmp := fmt.Sprintf("%v", err)
 		return false, errors.New(strtmp)
 	}
-	b, err := ioutil.ReadFile(telegrafDir + "/telegraf.conf")
+	b, err := ioutil.ReadFile(telegrafDir + "/telegraf.conf") // just pass the file name
 	if err != nil {
 		fmt.Print(err)
 	}
