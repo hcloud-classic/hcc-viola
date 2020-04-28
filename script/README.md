@@ -31,3 +31,27 @@ $ cp isprocess /usr/local/sbin/
 $ chmod 755 /usr/local/sbin/isprocess
 ```
 
+
+
+### VNC 다중 동시 접속 허용
+
+---
+
+`vi /usr/bin/vncserver`
+
+
+
+아래 부분을 찾아서
+
+```
+$cmd = "Xvnc4 :$displayNumber";
+```
+
+
+
+다음과 같이 바꿔준다.
+
+```
+$cmd = "Xvnc4 -AlwaysShared :$displayNumber";
+```
+
