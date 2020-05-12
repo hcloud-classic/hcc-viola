@@ -1,6 +1,7 @@
 package main
 
 import (
+	violinEnd "hcc/viola/end"
 	violaInit "hcc/viola/init"
 )
 
