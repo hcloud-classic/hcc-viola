@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"hcc/viola/lib/logger"
 	"hcc/viola/model"
+	"regexp"
+	"strings"
 )
 
 //AtomicAction : Parsing tjuhe
@@ -66,4 +68,32 @@ func clearAction() {
 	tokenaction.scope = nil
 	tokenaction.iprange = nil
 	tokenaction.rangeoption = false
+}
+
+func hccActionparser(parseaction model.HccAction) interface{} {
+	tokenaction.area = parseaction.ActionArea
+	tokenaction.class = parseaction.ActionClass
+	splitip := strings.Split(parseaction.HccIPRange, " ")
+	if isipv4(splitip[0]) && isipv4(splitip[1]) {
+
+		tokenaction.iprange = append(tokenaction.iprange, splitip[0])
+		tokenaction.iprange = append(tokenaction.iprange, splitip[1])
+	} else {
+		return errors.New("[hccActionparser] Invaild Ip range, Failed parse iprange")
+	}
+
+	//Action effective scope parsing
+	if parseaction.ActionScope != "" {
+		if strings.Contains(parseaction.ActionScope, ":") {
+			tokenaction.rangeoption = true
+		}
+		re := regexp.MustCompile("[0-9]+")
+		extractscope := re.FindAllString(parseaction.ActionScope, -1)
+		tokenaction.scope = extractscope
+
+	} else {
+		return errors.New("[hccActionparser] Invaild scope, Failed parse scope")
+	}
+
+	return nil
 }
