@@ -6,6 +6,7 @@ import (
 	"hcc/viola/lib/logger"
 	"hcc/viola/model"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -96,4 +97,28 @@ func hccActionparser(parseaction model.HccAction) interface{} {
 	}
 
 	return nil
+}
+
+func normalActionparser() interface{} {
+	return nil
+}
+
+func isipv4(host string) bool {
+	parts := strings.Split(host, ".")
+
+	if len(parts) < 4 {
+		return false
+	}
+
+	for _, x := range parts {
+		if i, err := strconv.Atoi(x); err == nil {
+			if i < 0 || i > 255 {
+				return false
+			}
+		} else {
+			return false
+		}
+
+	}
+	return true
 }
