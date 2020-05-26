@@ -122,3 +122,36 @@ func isipv4(host string) bool {
 	}
 	return true
 }
+
+func cmdNodes() (bool, interface{}) {
+
+	switch tokenaction.class {
+	case "status":
+		err, verbosenode := nodeStatus(tokenaction.scope[0])
+		if err != false {
+			return true, nil
+		}
+		return false, verbosenode
+	case "add":
+		if checkNFS() {
+			logger.Logger.Println("Leader Node NFS Service On")
+		} else {
+			restartService("nfs-common")
+			logger.Logger.Println("Leader Node NFS Service restart")
+		}
+		//For nodeMap renewal
+		nodeStatus("0")
+		if nAvailableNodeAdd() {
+			return true, errors.New("All Nodes is Preparing and online")
+		}
+		return false, errors.New("Some Nodes is Not Preparing")
+	case "del":
+	default:
+		return false, errors.New("Please Choose Operation {status, add, del}")
+	}
+	return false, errors.New("Not Available Command")
+}
+
+func cmdCluster(actclass string, actscope []string) {
+
+}
