@@ -155,3 +155,69 @@ func cmdNodes() (bool, interface{}) {
 func cmdCluster(actclass string, actscope []string) {
 
 }
+
+// CheckAll : Check all IPMI infos by 'check_all_interval_ms' config option
+func CheckAll() {
+	if checkAllLocked {
+		if config.Ipmi.Debug == "on" {
+			logger.Logger.Println("CheckAll(): Locked")
+		}
+		queueCheckAll()
+		return
+	}
+
+	go func() {
+		checkAllLock()
+		if config.Ipmi.Debug == "on" {
+			logger.Logger.Println("CheckAll(): Running UpdateAllNodes()")
+		}
+		_, _ = UpdateAllNodes()
+		checkAllUnlock()
+	}()
+
+	queueCheckAll()
+}
+
+// CheckStatus : Check power status of IPMI nodes by 'check_status_interval_ms' config option
+func CheckStatus() {
+	if checkStatusLocked {
+		if config.Ipmi.Debug == "on" {
+			logger.Logger.Println("CheckStatus(): Locked")
+		}
+		queueCheckStatus()
+		return
+	}
+
+	go func() {
+		checkStatusLock()
+		if config.Ipmi.Debug == "on" {
+			logger.Logger.Println("CheckStatus(): Running UpdateStatusNodes()")
+		}
+		_, _ = UpdateStatusNodes()
+		checkStatusUnlock()
+	}()
+
+	queueCheckStatus()
+}
+
+// CheckNodesDetail : Check detail infos of IPMI nodes by 'check_nodes_detail_interval_ms' config option
+func CheckNodesDetail() {
+	if checkNodesDetailLocked {
+		if config.Ipmi.Debug == "on" {
+			logger.Logger.Println("NodesDetail(): Locked")
+		}
+		queueNodesDetail()
+		return
+	}
+
+	go func() {
+		checkNodesDetailLock()
+		if config.Ipmi.Debug == "on" {
+			logger.Logger.Println("NodesDetail(): Running UpdateNodesDetail()")
+		}
+		_, _ = UpdateNodesDetail()
+		checkNodesDetailUnlock()
+	}()
+
+	queueNodesDetail()
+}
