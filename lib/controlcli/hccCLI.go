@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"hcc/viola/lib/logger"
 	"hcc/viola/model"
+	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
@@ -21,7 +22,6 @@ type AtomicAction struct {
 	receiver    string
 }
 
-// var actiontype = []string{"area", "class", "scope"}
 var tokenaction AtomicAction
 
 // var nodemap map[string]string
@@ -31,10 +31,79 @@ var nodemap = make(map[string]string)
 func HccCli(parseaction model.Control) (bool, interface{}) {
 	clearAction()
 	ActionClassify(parseaction)
-	//Debug Option
-	// logger.Logger.Println("Receive : ", parseaction)
+	logger.Logger.Println(tokenaction.area, tokenaction.class, tokenaction.scope)
+	ishcccluster, err := hccContainerVerify()
+	if err != nil {
+		return false, errors.New("ActionParcer Faild")
+	}
+	istelegrafset, checkerr := telegrafSetting(parseaction)
+	if !istelegrafset {
+		logger.Logger.Println(checkerr)
+	}
+
+	if ishcccluster {
+		switch tokenaction.area {
+		case "nodes":
+			return cmdNodes()
+		case "cluster":
+			cmdCluster(tokenaction.class, tokenaction.scope)
+		default:
+			logger.Logger.Println("Please choose the area {nodes or cluster}")
+		}
+	} else {
+		return false, errors.New("Please Continue in Hcloud Container")
+	}
 
 	return false, nil
+}
+
+func normalActionparser() interface{} {
+	return nil
+}
+
+func isipv4(host string) bool {
+	parts := strings.Split(host, ".")
+
+	if len(parts) < 4 {
+		return false
+	}
+	for _, x := range parts {
+		if i, err := strconv.Atoi(x); err == nil {
+			if i < 0 || i > 255 {
+				return false
+			}
+		} else {
+			return false
+		}
+
+	}
+	return true
+}
+
+func hccActionparser(parseaction model.HccAction) interface{} {
+	tokenaction.area = parseaction.ActionArea
+	tokenaction.class = parseaction.ActionClass
+	splitip := strings.Split(parseaction.HccIPRange, " ")
+	if isipv4(splitip[0]) && isipv4(splitip[1]) {
+
+		tokenaction.iprange = append(tokenaction.iprange, splitip[0])
+		tokenaction.iprange = append(tokenaction.iprange, splitip[1])
+	} else {
+		return errors.New("[hccActionparser] Invaild Ip range, Failed parse iprange")
+	}
+
+	if parseaction.ActionScope != "" {
+		if strings.Contains(parseaction.ActionScope, ":") {
+			tokenaction.rangeoption = true
+		}
+		re := regexp.MustCompile("[0-9]+")
+		extractscope := re.FindAllString(parseaction.ActionScope, -1)
+		tokenaction.scope = extractscope
+
+	} else {
+		return errors.New("[hccActionparser] Invaild scope, Failed parse scope")
+	}
+	return nil
 }
 
 // ActionClassify : Parcing Action
@@ -42,7 +111,6 @@ func ActionClassify(parsingmsg model.Control) interface{} {
 	logger.Logger.Println("Receive : ", parsingmsg)
 	tokenaction.publisher = parsingmsg.Publisher
 	tokenaction.receiver = parsingmsg.Receiver
-	//Classify Action Type
 	switch parsingmsg.Control.ActionType {
 	case "hcc":
 		err := hccActionparser(parsingmsg.Control.HccType)
@@ -69,58 +137,6 @@ func clearAction() {
 	tokenaction.scope = nil
 	tokenaction.iprange = nil
 	tokenaction.rangeoption = false
-}
-
-func hccActionparser(parseaction model.HccAction) interface{} {
-	tokenaction.area = parseaction.ActionArea
-	tokenaction.class = parseaction.ActionClass
-	splitip := strings.Split(parseaction.HccIPRange, " ")
-	if isipv4(splitip[0]) && isipv4(splitip[1]) {
-
-		tokenaction.iprange = append(tokenaction.iprange, splitip[0])
-		tokenaction.iprange = append(tokenaction.iprange, splitip[1])
-	} else {
-		return errors.New("[hccActionparser] Invaild Ip range, Failed parse iprange")
-	}
-
-	//Action effective scope parsing
-	if parseaction.ActionScope != "" {
-		if strings.Contains(parseaction.ActionScope, ":") {
-			tokenaction.rangeoption = true
-		}
-		re := regexp.MustCompile("[0-9]+")
-		extractscope := re.FindAllString(parseaction.ActionScope, -1)
-		tokenaction.scope = extractscope
-
-	} else {
-		return errors.New("[hccActionparser] Invaild scope, Failed parse scope")
-	}
-
-	return nil
-}
-
-func normalActionparser() interface{} {
-	return nil
-}
-
-func isipv4(host string) bool {
-	parts := strings.Split(host, ".")
-
-	if len(parts) < 4 {
-		return false
-	}
-
-	for _, x := range parts {
-		if i, err := strconv.Atoi(x); err == nil {
-			if i < 0 || i > 255 {
-				return false
-			}
-		} else {
-			return false
-		}
-
-	}
-	return true
 }
 
 func cmdNodes() (bool, interface{}) {
@@ -156,68 +172,67 @@ func cmdCluster(actclass string, actscope []string) {
 
 }
 
-// CheckAll : Check all IPMI infos by 'check_all_interval_ms' config option
-func CheckAll() {
-	if checkAllLocked {
-		if config.Ipmi.Debug == "on" {
-			logger.Logger.Println("CheckAll(): Locked")
-		}
-		queueCheckAll()
-		return
+func addNodes(actscope string) interface{} {
+	cmd := exec.Command("hccadm", "nodes", "add", "-n", actscope)
+	result, err := cmd.CombinedOutput()
+	if err != nil {
+		logger.Logger.Println("Node Can't add the Num of [", actscope, "] Node")
+		return err
 	}
+	nodemap[actscope] = "online"
 
-	go func() {
-		checkAllLock()
-		if config.Ipmi.Debug == "on" {
-			logger.Logger.Println("CheckAll(): Running UpdateAllNodes()")
-		}
-		_, _ = UpdateAllNodes()
-		checkAllUnlock()
-	}()
-
-	queueCheckAll()
+	return string(result)
 }
 
-// CheckStatus : Check power status of IPMI nodes by 'check_status_interval_ms' config option
-func CheckStatus() {
-	if checkStatusLocked {
-		if config.Ipmi.Debug == "on" {
-			logger.Logger.Println("CheckStatus(): Locked")
+func checkNFS() bool {
+	cmd := exec.Command("service", "nfs-common", "status")
+	result, err := cmd.CombinedOutput()
+	if err != nil {
+		logger.Logger.Println("NFS Service error")
+
+	} else {
+		if strings.Contains(string(result), "all daemons running") {
+			return true
 		}
-		queueCheckStatus()
-		return
 	}
-
-	go func() {
-		checkStatusLock()
-		if config.Ipmi.Debug == "on" {
-			logger.Logger.Println("CheckStatus(): Running UpdateStatusNodes()")
-		}
-		_, _ = UpdateStatusNodes()
-		checkStatusUnlock()
-	}()
-
-	queueCheckStatus()
+	return false
 }
 
-// CheckNodesDetail : Check detail infos of IPMI nodes by 'check_nodes_detail_interval_ms' config option
-func CheckNodesDetail() {
-	if checkNodesDetailLocked {
-		if config.Ipmi.Debug == "on" {
-			logger.Logger.Println("NodesDetail(): Locked")
+func nodeStatus(index string) (bool, interface{}) {
+	cmd := exec.Command("hccadm", "nodes", "status")
+	result, err := cmd.CombinedOutput()
+	if err != nil {
+		logger.Logger.Println("Node status error occurred!!")
+	}
+	if index == "0" {
+		logger.Logger.Println("HCC All Nodes Status \nIP  status\n", string(result))
+		nodeStatusRegister(string(result))
+
+		return true, string(result)
+	}
+	if nodeConnectCheck(index) {
+		tmpstr := strings.Split(string(result), "\n")
+		for _, words := range tmpstr {
+			retoken := strings.Split(string(words), ":")
+			if string(words[0]) == index {
+				logger.Logger.Println(index, " th node status = > ", retoken[1])
+				return true, string(retoken[1])
+			}
 		}
-		queueNodesDetail()
-		return
+	} else {
+		result := "[" + index + "] th Node Is Not in Cluster Area"
+		return false, errors.New(result)
 	}
 
-	go func() {
-		checkNodesDetailLock()
-		if config.Ipmi.Debug == "on" {
-			logger.Logger.Println("NodesDetail(): Running UpdateNodesDetail()")
-		}
-		_, _ = UpdateNodesDetail()
-		checkNodesDetailUnlock()
-	}()
+	return false, nil
+}
 
-	queueNodesDetail()
+func nodeStatusRegister(status string) {
+	tmpstr := strings.Split(status, "\n")
+	for _, words := range tmpstr {
+		if strings.Contains(string(words), ":") {
+			retoken := strings.Split(string(words), ":")
+			nodemap[string(words[0])] = retoken[1]
+		}
+	}
 }
