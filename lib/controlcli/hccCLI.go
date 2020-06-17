@@ -36,9 +36,9 @@ func HccCli(parseaction model.Control) (bool, interface{}) {
 	if err != nil {
 		return false, errors.New("ActionParcer Faild")
 	}
-	istelegrafset, checkerr := telegrafSetting(parseaction)
+	istelegrafset, checker := telegrafSetting(parseaction)
 	if !istelegrafset {
-		logger.Logger.Println(checkerr)
+		logger.Logger.Println(checker)
 	}
 
 	if ishcccluster {
@@ -235,4 +235,46 @@ func nodeStatusRegister(status string) {
 			nodemap[string(words[0])] = retoken[1]
 		}
 	}
+}
+
+func isAllNodeOnline(startRange int, endRange int) bool {
+	var needednode = endRange - startRange + 1
+	var count = 0
+	for i := startRange; i <= endRange; i++ {
+		if nodemap[strconv.Itoa(i)] == "present" {
+			return false
+		}
+		if nodemap[strconv.Itoa(i)] == "online" {
+			count++
+		}
+	}
+	logger.Logger.Println("needednode : ", needednode, " || count : ", count)
+	if needednode == count {
+		return true
+	}
+
+	return false
+}
+
+func nodeConnectCheck(actscope string) bool {
+	for key := range nodemap {
+		if key == actscope {
+			return true
+		}
+	}
+	return false
+}
+
+func rangeAtoiParse(start string, end string) (int, int, error) {
+	startInt, err := strconv.Atoi(start)
+	if err != nil {
+		return 0, 0, errors.New("failed to parse start")
+	}
+
+	endInt, err := strconv.Atoi(end)
+	if err != nil {
+		return 0, 0, errors.New("failed to parse end")
+	}
+
+	return startInt, endInt, nil
 }
