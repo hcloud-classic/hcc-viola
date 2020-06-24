@@ -278,3 +278,51 @@ func rangeAtoiParse(start string, end string) (int, int, error) {
 
 	return startInt, endInt, nil
 }
+
+func nAvailableNodeAdd() bool {
+	subnetstart := strings.Split(tokenaction.iprange[0], ".")
+	subnetend := strings.Split(tokenaction.iprange[1], ".")
+	if tokenaction.rangeoption {
+		startRange, endRange, err := rangeAtoiParse(tokenaction.scope[0], tokenaction.scope[1])
+		if err != nil {
+			logger.Logger.Println("Available node Can't parse")
+			return false
+		}
+
+		retry := 0
+		logger.Logger.Println("startRange : ", startRange, " | endRange  ", endRange, " | subnet : ", subnetstart)
+
+		for !isAllNodeOnline(startRange, endRange) {
+			logger.Logger.Println("Available Node Add retry : [", retry+1, "/100]")
+			nodeStatus("0")
+			if retry > 100 {
+				return false
+			}
+			for i := startRange; i <= endRange; i++ {
+				subnetstart[3] = strconv.Itoa(i)
+				logger.Logger.Println(nodeVerifyAdd(strconv.Itoa(i), subnetstart))
+			}
+			time.Sleep(4 * time.Second)
+			retry++
+		}
+		return true
+	}
+	if nodeConnectCheck(tokenaction.scope[0]) && tokenaction.scope[0] != "0" {
+		retry := 0
+		specificnode, err := strconv.Atoi(tokenaction.scope[0])
+		if err != nil {
+			return false
+		}
+		for !isAllNodeOnline(specificnode, specificnode) {
+			if retry > 100 {
+				return false
+			}
+			logger.Logger.Println("Available Node Add retry : [", retry+1, "/100]")
+			nodeStatus("0")
+			subnetstart[3] = tokenaction.scope[0]
+			logger.Logger.Println(nodeVerifyAdd(tokenaction.scope[0], subnetstart))
+			retry++
+			time.Sleep(4 * time.Second)
+		}
+		return true
+	}
