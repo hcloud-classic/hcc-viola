@@ -326,3 +326,24 @@ func nAvailableNodeAdd() bool {
 		}
 		return true
 	}
+	startip, endip, err := rangeAtoiParse(subnetstart[3], subnetend[3])
+	if err != nil {
+		logger.Logger.Println("Available node Can't parse")
+		return false
+	}
+	retry := 0
+	for !isAllNodeOnline(startip, endip) {
+		if retry > 100 {
+			return false
+		}
+		logger.Logger.Println("Available Node Add retry : [", retry+1, "/100]")
+		nodeStatus("0")
+		for i := startip; i <= endip; i++ {
+			subnetstart[3] = strconv.Itoa(i)
+			logger.Logger.Println(nodeVerifyAdd(strconv.Itoa(i), subnetstart))
+		}
+		retry++
+		time.Sleep(4 * time.Second)
+	}
+	return true
+}
