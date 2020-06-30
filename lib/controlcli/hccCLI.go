@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"hcc/viola/lib/logger"
 	"hcc/viola/model"
+	"os"
 	"os/exec"
 	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
 //AtomicAction : Parsing tjuhe
@@ -346,4 +348,50 @@ func nAvailableNodeAdd() bool {
 		time.Sleep(4 * time.Second)
 	}
 	return true
+}
+
+func hccContainerVerify() (bool, error) {
+
+	if fileExists("/proc/nodes/self/nodeid") {
+		logger.Logger.Println("Hcloud Container load")
+		return true, nil
+	}
+
+	return false, errors.New("Not Hcloud Container")
+}
+
+func extractToken(srcstr string, delimiter string, index int) string {
+	tmpstr := strings.Split(srcstr, delimiter)
+	return tmpstr[index]
+}
+
+func fileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
+}
+
+func verifyNPort(ip string, port string) bool {
+	cmd := exec.Command("nmap", ip)
+	result, err := cmd.CombinedOutput()
+	if err != nil {
+		logger.Logger.Println(ip, " has not configure the ", port)
+	}
+	if strings.Contains(string(result), port) {
+		logger.Logger.Println(ip, " : ", port, "Connect")
+
+		return true
+	}
+
+	return false
+}
+
+func nodeVerifyAdd(mapnum string, subnetstart []string) interface{} {
+	if nodemap[mapnum] == "present" && verifyNPort(strings.Join(subnetstart, "."), "2222") {
+		result := addNodes(mapnum)
+		return result
+	}
+	return "Faild Add Node" + mapnum
 }
