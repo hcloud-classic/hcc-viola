@@ -372,3 +372,26 @@ func fileExists(filename string) bool {
 	}
 	return !info.IsDir()
 }
+
+func verifyNPort(ip string, port string) bool {
+	cmd := exec.Command("nmap", ip)
+	result, err := cmd.CombinedOutput()
+	if err != nil {
+		logger.Logger.Println(ip, " has not configure the ", port)
+	}
+	if strings.Contains(string(result), port) {
+		logger.Logger.Println(ip, " : ", port, "Connect")
+
+		return true
+	}
+
+	return false
+}
+
+func nodeVerifyAdd(mapnum string, subnetstart []string) interface{} {
+	if nodemap[mapnum] == "present" && verifyNPort(strings.Join(subnetstart, "."), "2222") {
+		result := addNodes(mapnum)
+		return result
+	}
+	return "Faild Add Node" + mapnum
+}
