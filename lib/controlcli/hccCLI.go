@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"hcc/viola/lib/logger"
 	"hcc/viola/model"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"regexp"
@@ -394,4 +395,48 @@ func nodeVerifyAdd(mapnum string, subnetstart []string) interface{} {
 		return result
 	}
 	return "Faild Add Node" + mapnum
+}
+
+func TelegrafCheck() (bool, interface{}) {
+	if !fileExists(telegrafDir + "/telegraf.conf") {
+		return false, errors.New("Telegraf setting is failed, Please check " + telegrafDir + "/telegraf.conf")
+	}
+	return true, "Telegraf Config Exist!\n"
+}
+
+func telegrafSetting(parseaction model.Control) (bool, interface{}) {
+	state, err := TelegrafCheck()
+	if !state {
+		strtmp := fmt.Sprintf("%v", err)
+		return false, errors.New(strtmp)
+	}
+	b, err := ioutil.ReadFile(telegrafDir + "/telegraf.conf")
+	if err != nil {
+		fmt.Print(err)
+	}
+	r, _ := regexp.Compile(parseaction.Control.HccType.ServerUUID)
+	if r.MatchString(string(b)) {
+		return true, "Already setting complete\n"
+	}
+
+	teleconf := agent + outputsInfluxdb + cpuInfo + inputsDisk + etcSet
+	teleconf = strings.Replace(teleconf, "SERVER_UUID", parseaction.Control.HccType.ServerUUID, -1)
+	teleconf = strings.Replace(teleconf, "INFLUX_DB_IP", config.InfluxDB.IP, -1)
+	teleconf = strings.Replace(teleconf, "PORT", config.InfluxDB.Port, -1)
+	err = ioutil.WriteFile(telegrafDir+"/telegraf.conf", []byte(teleconf), 644)
+	if err != nil {
+		return false, errors.New("failed to write to telegraf.conf file")
+	}
+	restartService("telegraf")
+	return true, "Telegraf Setting is complete!!\n"
+}
+
+func restartService(servname string) {
+	cmd := exec.Command("service", servname, "restart")
+	_, err := cmd.CombinedOutput()
+	if err != nil {
+		logger.Logger.Println(servname + " Service Can't start")
+
+	}
+
 }
