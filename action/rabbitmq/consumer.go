@@ -105,10 +105,10 @@ func ConsumeAction() error {
 			}
 			fmt.Println("RabbitmQ : ", control)
 			logger.Logger.Println("RabbitmQ : ", string(pretty.Bytes()))
-			logger.Logger.Println("Codex : ", control.Control.HccType.HccIPRange)
-			status, hccClierr := controlcli.HccCli(control)
-			errstr := fmt.Sprintf("%v", hccClierr)
-			if !status && hccClierr != nil {
+			// logger.Logger.Println("Codex : ", control.Control.HccType.HccIPRange)
+			status, err := controlcli.HccCli(control)
+			errstr := fmt.Sprintf("%v", err)
+			if !status && err != nil {
 				logger.Logger.Println("ConsumeAction: Faild execution command [", errstr, "]")
 				control.Control.ActionResult = "Failed"
 			} else {

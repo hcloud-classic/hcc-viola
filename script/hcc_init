@@ -29,7 +29,6 @@ GEOMETRY="1920x1080"
 OPTIONS="-name ${NAME} -depth ${DEPTH} -geometry ${GEOMETRY} :${DISPLAY}"
 
 
-
 . /lib/lsb/init-functions
 
 
@@ -47,6 +46,8 @@ if [ $ret = 9 ];then
 	fi
 	
 else
+	log_progress_msg "VNC Server ReStarting"
+	d_restart
 	STATUS=$EXESTAT
 	return ${STATUS:-0}
 fi
@@ -83,9 +84,14 @@ d_stop() {
 # Function that prints if Hcloud is started or not
 #
 d_status() {
-    /usr/local/sbin/isprocess vnc 
-    ret=$?
-    return $ret
+    # /usr/local/sbin/isprocess vnc 
+	if [ -f /root/.vnc/*.pid ];then
+		echo "Vncserver is running"
+		return 0
+	else
+		echo "Vncserver is not running"
+		return 9
+	fi
 }
 
     case "$1" in
