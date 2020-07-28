@@ -19,7 +19,7 @@ var Channel *amqp.Channel
 func PrepareChannel() error {
 	Connection, err := amqp.Dial("amqp://" + config.RabbitMQ.ID + ":" + config.RabbitMQ.Password + "@" +
 		config.RabbitMQ.Address + ":" + strconv.Itoa(int(config.RabbitMQ.Port)))
-	// Connection, err := amqp.Dial("amqp://admin:qwe1212!Q@192.168.110.10:5672/")
+	// Connection, err := amqp.Dial("amqp://admin:qwe1212!Q@172.18.5.10:5672/")
 	//
 	// fmt.Println("amqp://" + config.RabbitMQ.ID + ":" + config.RabbitMQ.Password + "@" +
 	// config.RabbitMQ.Address + ":" + strconv.Itoa(int(config.RabbitMQ.Port)))

@@ -13,3 +13,22 @@ mutation _ {
     user_uuid
   }
 }
+
+
+// Rabbitmq
+{
+    "action": {
+        "action_result": "",
+        "action_type": "hcc",
+        "hcc_action": {
+            "action_area": "nodes",
+            "action_class": "add",
+            "action_scope": "0",
+            "iprange": "172.18.5.1 172.18.5.2",
+            "server_uuid": "codex_lab"
+        },
+        "normal_action": {}
+    },
+    "publisher": "violin",
+    "receiver": "violin"
+}

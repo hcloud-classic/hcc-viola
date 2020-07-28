@@ -15,7 +15,25 @@ PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/etc/viola
 . /lib/lsb/init-functions
 
 
+
 d_start() {
+
+HOSTIP=$(cat $(ls /var/lib/dhclient/ | grep eth0) | grep -m 1 'routers '|awk '{print $3}' | tr -d ';')
+echo -e "[http]\n\
+port 7000\n\
+\n\
+[network]\n\
+interface_name eth0\n\
+\n\
+[rabbitmq]\n\
+rabbitmq_id admin\n\
+rabbitmq_password qwe1212!Q\n\
+rabbitmq_address $HOSTIP\n\
+rabbitmq_port 5672\n\
+\n\
+[influxdb]\n\
+influxdb_ip $HOSTIP\n\
+influxdb_port 8086" > /etc/hcc/viola/viola.conf
 #su root -c "/etc/hcc/viola/viola"
 #exec /etc/hcc/viola/viola &
 #/etc/hcc/viola/viola &
@@ -23,7 +41,6 @@ su root -c "/usr/bin/nohup /etc/hcc/viola/viola >/dev/null 2>&1 &"
 STATUS=$?
     return ${STATUS:-0}
 }
-
 
 d_restart() {
     ret=$?
