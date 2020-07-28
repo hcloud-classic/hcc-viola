@@ -8,6 +8,7 @@ import (
 	"hcc/viola/lib/logger"
 	"hcc/viola/model"
 	"log"
+	"time"
 )
 
 // GetClusterIP : Consume 'update_subnet' queues from RabbitMQ channel
@@ -97,17 +98,17 @@ func ConsumeAction() error {
 				// return
 			}
 			var pretty bytes.Buffer
-			error := json.Indent(&pretty, d.Body, "", "\t")
-			if error != nil {
-				log.Println("JSON parse error: ", error)
+			err := json.Indent(&pretty, d.Body, "", "\t")
+			if err != nil {
+				log.Println("JSON parse error: ", err)
 				return
 			}
 			fmt.Println("RabbitmQ : ", control)
 			logger.Logger.Println("RabbitmQ : ", string(pretty.Bytes()))
-			// logger.Logger.Println("Codex : ", control.Control.HccType.HccIPRange)
-			status, err := controlcli.HccCli(control)
-			errstr := fmt.Sprintf("%v", err)
-			if !status && err != nil {
+			logger.Logger.Println("Codex : ", control.Control.HccType.HccIPRange)
+			status, hccClierr := controlcli.HccCli(control)
+			errstr := fmt.Sprintf("%v", hccClierr)
+			if !status && hccClierr != nil {
 				logger.Logger.Println("ConsumeAction: Faild execution command [", errstr, "]")
 				control.Control.ActionResult = "Failed"
 			} else {
@@ -117,7 +118,16 @@ func ConsumeAction() error {
 			logger.Logger.Println("Will Publish Strcut : ", control, "\n To : [", control.Receiver, "]")
 			switch control.Receiver {
 			case "violin":
-				PublishViolin(control)
+				for i := 0; i < 10; i++ {
+					err := PublishViolin(control)
+					if err != nil {
+						logger.Logger.Println(err)
+						time.Sleep(time.Second * 3)
+						continue
+					} else {
+						break
+					}
+				}
 			// To-Do
 			//  if another modules want to receive action result, implementation code write here
 			default:

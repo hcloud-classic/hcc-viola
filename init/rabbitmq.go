@@ -19,11 +19,17 @@ func rabbitmqInit() error {
 		}
 	}
 
-	// Consume mq
-	err := rabbitmq.ConsumeAction()
-	if err != nil {
-		return err
+	for i := 0; i < 10; i++ {
+		err := rabbitmq.ConsumeAction()
+		if err != nil {
+			logger.Logger.Println(err)
+			time.Sleep(time.Second * 3)
+			continue
+		} else {
+			break
+		}
 	}
+
 
 	forever := make(chan bool)
 	logger.Logger.Println("RabbitMQ forever channel ready.")
