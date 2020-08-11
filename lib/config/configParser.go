@@ -2,6 +2,8 @@ package config
 
 import (
 	"hcc/viola/lib/logger"
+	"os/exec"
+	"strings"
 
 	"github.com/Terry-Mao/goconf"
 )
@@ -30,10 +32,7 @@ func parseInfluxDB() {
 	}
 
 	InfluxDB = influxdb{}
-	InfluxDB.IP, err = config.InfluxDBConfig.String("influxdb_ip")
-	if err != nil {
-		logger.Logger.Panicln(err)
-	}
+	InfluxDB.IP = MasterAddr
 	InfluxDB.Port, err = config.InfluxDBConfig.String("influxdb_port")
 	if err != nil {
 		logger.Logger.Panicln(err)
@@ -57,14 +56,34 @@ func parseRabbitMQ() {
 		logger.Logger.Panicln(err)
 	}
 
-	RabbitMQ.Address, err = config.RabbitMQConfig.String("rabbitmq_address")
+	RabbitMQ.Address = MasterAddr
+	if RabbitMQ.Address != nil {
+		logger.Logger.Panicln("Node IP nill")
+	}
+	RabbitMQ.Port, err = config.RabbitMQConfig.Int("rabbitmq_port")
+	if err != nil {
+		logger.Logger.Panicln(err)
+	}
+}
+
+func parseMasterAddr() {
+	config.NetworkConfig = conf.Get("network")
+	if config.NetworkConfig == nil {
+		logger.Logger.Panicln("no network section")
+	}
+
+	NetworkConfig.InterfaceName, err = config.NetworkConfig.String("interface_name")
 	if err != nil {
 		logger.Logger.Panicln(err)
 	}
 
-	RabbitMQ.Port, err = config.RabbitMQConfig.Int("rabbitmq_port")
+	cmdString := "cat /var/lib/dhclient/$(ls /var/lib/dhclient/ | grep " + NetworkConfig.InterfaceName + " ) | grep -m 1 'routers '|awk '{print $3}' | tr -d ';'"
+	cmd := exec.Command("bash", "-c", cmdString)
+	cmdout, err := cmd.CombinedOutput()
 	if err != nil {
-		logger.Logger.Panicln(err)
+		logger.Logger.Println("Node status error occurred!!")
+	} else {
+		MasterAddr = strings.TrimSpace(string(cmdout))
 	}
 }
 
@@ -73,7 +92,7 @@ func Parser() {
 	if err = conf.Parse(configLocation); err != nil {
 		logger.Logger.Panicln(err)
 	}
-
+	parseMasterAddr()
 	parseHTTP()
 	parseRabbitMQ()
 	parseInfluxDB()
