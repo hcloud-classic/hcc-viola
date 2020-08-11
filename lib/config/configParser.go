@@ -2,6 +2,8 @@ package config
 
 import (
 	"hcc/viola/lib/logger"
+	"os/exec"
+	"strings"
 
 	"github.com/Terry-Mao/goconf"
 )
@@ -68,12 +70,33 @@ func parseRabbitMQ() {
 	}
 }
 
+func parseMasterAddr() {
+	config.NetworkConfig = conf.Get("network")
+	if config.NetworkConfig == nil {
+		logger.Logger.Panicln("no network section")
+	}
+
+	NetworkConfig.InterfaceName, err = config.NetworkConfig.String("interface_name")
+	if err != nil {
+		logger.Logger.Panicln(err)
+	}
+
+	cmdString := "cat /var/lib/dhclient/$(ls /var/lib/dhclient/ | grep " + NetworkConfig.InterfaceName + " ) | grep -m 1 'routers '|awk '{print $3}' | tr -d ';'"
+	cmd := exec.Command("bash", "-c", cmdString)
+	cmdout, err := cmd.CombinedOutput()
+	if err != nil {
+		logger.Logger.Println("Node status error occurred!!")
+	} else {
+		MasterAddr = strings.TrimSpace(string(cmdout))
+	}
+}
+
 // Parser : Parse config file
 func Parser() {
 	if err = conf.Parse(configLocation); err != nil {
 		logger.Logger.Panicln(err)
 	}
-
+	parseMasterAddr()
 	parseHTTP()
 	parseRabbitMQ()
 	parseInfluxDB()
