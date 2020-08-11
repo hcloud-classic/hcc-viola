@@ -32,10 +32,7 @@ func parseInfluxDB() {
 	}
 
 	InfluxDB = influxdb{}
-	InfluxDB.IP, err = config.InfluxDBConfig.String("influxdb_ip")
-	if err != nil {
-		logger.Logger.Panicln(err)
-	}
+	InfluxDB.IP = MasterAddr
 	InfluxDB.Port, err = config.InfluxDBConfig.String("influxdb_port")
 	if err != nil {
 		logger.Logger.Panicln(err)
@@ -59,11 +56,10 @@ func parseRabbitMQ() {
 		logger.Logger.Panicln(err)
 	}
 
-	RabbitMQ.Address, err = config.RabbitMQConfig.String("rabbitmq_address")
-	if err != nil {
-		logger.Logger.Panicln(err)
+	RabbitMQ.Address = MasterAddr
+	if RabbitMQ.Address != nil {
+		logger.Logger.Panicln("Node IP nill")
 	}
-
 	RabbitMQ.Port, err = config.RabbitMQConfig.Int("rabbitmq_port")
 	if err != nil {
 		logger.Logger.Panicln(err)
