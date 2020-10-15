@@ -4,6 +4,7 @@ import (
 	"hcc/viola/lib/config"
 	"hcc/viola/lib/controlcli"
 	"hcc/viola/lib/logger"
+	"os"
 )
 
 // MainInit : Main initialization function
@@ -18,6 +19,11 @@ func MainInit() error {
 		return err
 	}
 
+	err = prepareENVSetting()
+	if err != nil {
+		logger.Logger.Println(err)
+		os.Exit(0)
+	}
 	config.Parser()
 	status, telegraferr := controlcli.TelegrafCheck()
 	logger.Logger.Println(status, telegraferr)
