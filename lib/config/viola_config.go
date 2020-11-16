@@ -8,4 +8,5 @@ type violaConfig struct {
 	HTTPConfig     *goconf.Section
 	RabbitMQConfig *goconf.Section
 	InfluxDBConfig *goconf.Section
+	NetworkConfig  *goconf.Section
 }
