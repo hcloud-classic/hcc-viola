@@ -3,6 +3,7 @@ package controlcli
 import (
 	"errors"
 	"fmt"
+	"hcc/viola/lib/config"
 	"hcc/viola/lib/logger"
 	"hcc/viola/model"
 	"io/ioutil"
@@ -27,13 +28,13 @@ type AtomicAction struct {
 
 var tokenaction AtomicAction
 
-// var nodemap map[string]string
 var nodemap = make(map[string]string)
 
 // HccCli : Hcc integration Command line interface
 func HccCli(parseaction model.Control) (bool, interface{}) {
 	clearAction()
 	ActionClassify(parseaction)
+
 	logger.Logger.Println(tokenaction.area, tokenaction.class, tokenaction.scope)
 	ishcccluster, err := hccContainerVerify()
 	if err != nil {
@@ -70,6 +71,7 @@ func isipv4(host string) bool {
 	if len(parts) < 4 {
 		return false
 	}
+
 	for _, x := range parts {
 		if i, err := strconv.Atoi(x); err == nil {
 			if i < 0 || i > 255 {
@@ -207,6 +209,7 @@ func nodeStatus(index string) (bool, interface{}) {
 	if err != nil {
 		logger.Logger.Println("Node status error occurred!!")
 	}
+
 	if index == "0" {
 		logger.Logger.Println("HCC All Nodes Status \nIP  status\n", string(result))
 		nodeStatusRegister(string(result))
@@ -235,6 +238,7 @@ func nodeStatusRegister(status string) {
 	for _, words := range tmpstr {
 		if strings.Contains(string(words), ":") {
 			retoken := strings.Split(string(words), ":")
+
 			nodemap[string(words[0])] = retoken[1]
 		}
 	}
@@ -283,6 +287,7 @@ func rangeAtoiParse(start string, end string) (int, int, error) {
 }
 
 func nAvailableNodeAdd() bool {
+
 	subnetstart := strings.Split(tokenaction.iprange[0], ".")
 	subnetend := strings.Split(tokenaction.iprange[1], ".")
 	if tokenaction.rangeoption {
@@ -329,11 +334,13 @@ func nAvailableNodeAdd() bool {
 		}
 		return true
 	}
+
 	startip, endip, err := rangeAtoiParse(subnetstart[3], subnetend[3])
 	if err != nil {
 		logger.Logger.Println("Available node Can't parse")
 		return false
 	}
+
 	retry := 0
 	for !isAllNodeOnline(startip, endip) {
 		if retry > 100 {
@@ -419,7 +426,7 @@ func telegrafSetting(parseaction model.Control) (bool, interface{}) {
 		return true, "Already setting complete\n"
 	}
 
-	teleconf := agent + outputsInfluxdb + cpuInfo + inputsDisk + etcSet
+	teleconf := agent + outputsInfluxdb + cpuInfo + inputsDisk + netInfo + etcSet
 	teleconf = strings.Replace(teleconf, "SERVER_UUID", parseaction.Control.HccType.ServerUUID, -1)
 	teleconf = strings.Replace(teleconf, "INFLUX_DB_IP", config.InfluxDB.IP, -1)
 	teleconf = strings.Replace(teleconf, "PORT", config.InfluxDB.Port, -1)

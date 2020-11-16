@@ -11,6 +11,7 @@ import (
 var conf = goconf.New()
 var config = violaConfig{}
 var err error
+var MasterAddr string
 
 func parseHTTP() {
 	config.HTTPConfig = conf.Get("http")
@@ -33,6 +34,7 @@ func parseInfluxDB() {
 
 	InfluxDB = influxdb{}
 	InfluxDB.IP = MasterAddr
+
 	InfluxDB.Port, err = config.InfluxDBConfig.String("influxdb_port")
 	if err != nil {
 		logger.Logger.Panicln(err)
@@ -55,15 +57,14 @@ func parseRabbitMQ() {
 	if err != nil {
 		logger.Logger.Panicln(err)
 	}
-
 	RabbitMQ.Address = MasterAddr
-	if RabbitMQ.Address != nil {
-		logger.Logger.Panicln("Node IP nill")
-	}
 	RabbitMQ.Port, err = config.RabbitMQConfig.Int("rabbitmq_port")
 	if err != nil {
 		logger.Logger.Panicln(err)
 	}
+
+	logger.Logger.Println("RabbitMQ [ID: ", RabbitMQ.ID, ", Pass: ", RabbitMQ.Password, ", Addr: ", RabbitMQ.Address, "/", RabbitMQ.Port, "]")
+
 }
 
 func parseMasterAddr() {
