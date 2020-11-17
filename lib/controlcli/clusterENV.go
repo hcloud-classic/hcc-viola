@@ -12,7 +12,7 @@ import (
 
 //VerifyClusrter : Verify Cluster system
 func VerifyClusrter() bool {
-	act := "krgadm cluster"
+	act := "hccadm cluster"
 	cmd := exec.Command("/bin/bash", "-c", act)
 	_, err := cmd.CombinedOutput()
 	if err != nil {

@@ -32,6 +32,7 @@ func MainInit() error {
 	if err != nil {
 		return err
 	}
-
+	// Cmd = &cobra.Command{Use: "viola"}
+	// Cmd.AddCommand(serverCmd)
 	return nil
 }

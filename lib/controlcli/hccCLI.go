@@ -24,6 +24,7 @@ type AtomicAction struct {
 	rangeoption bool
 	publisher   string
 	receiver    string
+	nodeList    []string
 }
 
 // var actiontype = []string{"area", "class", "scope"}
@@ -90,12 +91,22 @@ func isipv4(host string) bool {
 }
 
 func hccActionparser(parseaction model.HccAction) interface{} {
-	// logger.Logger.Println("hccActionparser : ", parseaction, "  parseaction.ActionArea : ", parseaction.ActionArea)
+	var tempNodeIP string
+
 	tokenaction.area = parseaction.ActionArea
 	tokenaction.class = parseaction.ActionClass
 	//ip range parse
 	splitip := strings.Split(parseaction.HccIPRange, " ")
 	if isipv4(splitip[0]) && isipv4(splitip[1]) {
+
+		startIP := strings.Split(splitip[0], ".")
+		endIP := strings.Split(splitip[1], ".")
+		loopStart, _ := strconv.Atoi(startIP[3])
+		loopEnd, _ := strconv.Atoi(endIP[3])
+		for i := loopStart; i < loopEnd; i++ {
+			tempNodeIP = startIP[0] + "." + startIP[1] + "." + startIP[2] + "." + strconv.Itoa(i)
+			tokenaction.nodeList = append(tokenaction.nodeList, tempNodeIP)
+		}
 
 		tokenaction.iprange = append(tokenaction.iprange, splitip[0])
 		tokenaction.iprange = append(tokenaction.iprange, splitip[1])
@@ -176,9 +187,19 @@ func cmdNodes() (bool, interface{}) {
 		}
 		//For nodeMap renewal
 		nodeStatus("0")
+		logger.Logger.Println("Telegraf Service Check")
+		for _, args := range tokenaction.nodeList {
+			fmt.Println(args)
+			result, err := ComputeTelegrafRestart(args)
+			if err != nil {
+				logger.Logger.Println("Result : ", result, " Error : ", err.Error())
+			}
+
+		}
 		if nAvailableNodeAdd() {
 			return true, errors.New("All Nodes is Preparing and online")
 		}
+
 		return false, errors.New("Some Nodes is Not Preparing")
 	case "del":
 	default:
@@ -367,13 +388,11 @@ func nAvailableNodeAdd() bool {
 		return true
 	}
 
-	// logger.Logger.Println(subnetstart, "   ", subnetend)
 	startip, endip, err := rangeAtoiParse(subnetstart[3], subnetend[3])
 	if err != nil {
 		logger.Logger.Println("Available node Can't parse")
 		return false
 	}
-	// logger.Logger.Println(startip, " to ", endip)
 
 	retry := 0
 	for !isAllNodeOnline(startip, endip) {
@@ -458,6 +477,7 @@ func TelegrafCheck() (bool, interface{}) {
 }
 
 func telegrafSetting(parseaction model.Control) (bool, interface{}) {
+	var nodeList string
 	state, err := TelegrafCheck()
 	if !state {
 		strtmp := fmt.Sprintf("%v", err)
@@ -471,14 +491,32 @@ func telegrafSetting(parseaction model.Control) (bool, interface{}) {
 	if r.MatchString(string(b)) {
 		return true, "Already setting complete\n"
 	}
-
-	teleconf := agent + outputsInfluxdb + cpuInfo + inputsDisk + netInfo + etcSet
-	teleconf = strings.Replace(teleconf, "SERVER_UUID", parseaction.Control.HccType.ServerUUID, -1)
-	teleconf = strings.Replace(teleconf, "INFLUX_DB_IP", config.InfluxDB.IP, -1)
-	teleconf = strings.Replace(teleconf, "PORT", config.InfluxDB.Port, -1)
-	err = ioutil.WriteFile(telegrafDir+"/telegraf.conf", []byte(teleconf), 644)
+	//For Leader
+	leaderTelegrafconf := agent + outputsInfluxdb + cpuInfo + inputsDisk + netInfo + etcSet
+	leaderTelegrafconf = strings.Replace(leaderTelegrafconf, "SERVER_UUID", parseaction.Control.HccType.ServerUUID, -1)
+	leaderTelegrafconf = strings.Replace(leaderTelegrafconf, "INFLUX_DB_IP", config.InfluxDB.IP, -1)
+	leaderTelegrafconf = strings.Replace(leaderTelegrafconf, "PORT", config.InfluxDB.Port, -1)
+	err = ioutil.WriteFile(telegrafDir+"/telegraf.conf", []byte(leaderTelegrafconf), 644)
 	if err != nil {
 		return false, errors.New("failed to write to telegraf.conf file")
+	}
+
+	computeTelegrafconf := agent + outputsInfluxdb + ping
+	computeTelegrafconf = strings.Replace(computeTelegrafconf, "SERVER_UUID", parseaction.Control.HccType.ServerUUID, -1)
+	computeTelegrafconf = strings.Replace(computeTelegrafconf, "INFLUX_DB_IP", config.InfluxDB.IP, -1)
+	computeTelegrafconf = strings.Replace(computeTelegrafconf, "PORT", config.InfluxDB.Port, -1)
+
+	for i, args := range tokenaction.nodeList {
+		nodeList += "\"" + args + "\""
+		if i < len(tokenaction.nodeList)-1 {
+			nodeList += ", "
+		}
+	}
+	computeTelegrafconf = strings.Replace(computeTelegrafconf, "NODE_LIST", nodeList, -1)
+
+	err = ioutil.WriteFile(telegrafDir+"/telegraf_Compute.conf", []byte(computeTelegrafconf), 644)
+	if err != nil {
+		return false, errors.New("failed to write to telegraf_Compute.conf file")
 	}
 	restartService("telegraf")
 	return true, "Telegraf Setting is complete!!\n"
@@ -491,5 +529,26 @@ func restartService(servname string) {
 		logger.Logger.Println(servname + " Service Can't start")
 
 	}
+
+}
+
+func ComputeTelegrafRestart(ip string) (string, error) {
+	serviceCheck := "ssh -T root@" + ip + " -p 2222 \"pgrep telegraf\""
+	cmd := exec.Command("/bin/bash", "-c", serviceCheck)
+	result, err := cmd.CombinedOutput()
+	if err != nil || strings.TrimSuffix(string(result), "\n") == "" {
+		serviceRestart := "ssh -T root@" + ip + " -p 2222 \"service compute_telegraf restart\""
+		cmd = exec.Command("/bin/bash", "-c", serviceRestart)
+		result, err = cmd.CombinedOutput()
+		if err != nil {
+			logger.Logger.Println(ip + " Telegraf Service Can't start")
+
+			return "", err
+		}
+	} else {
+		logger.Logger.Println(ip + " Telegraf Service Already started")
+	}
+
+	return strings.TrimSuffix(string(result), "\n"), err
 
 }
