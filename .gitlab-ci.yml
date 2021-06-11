@@ -1,40 +1,45 @@
 stages:
-  - init
-  - test
-  - build
-  - run
+    - init
+    - test
+    - build
 
 before_script:
-  - export GOROOT="/opt/go"
-  - export GOPATH="/home/gitlab-runner/go"
-  - export PATH="$PATH:$GOROOT/bin:$GOPATH/bin"
+    - export GOROOT="/usr/local/go"
+    - export GOPATH="/home/gitlab-runner/go"
+    - export PATH="$PATH:$GOROOT/bin:$GOPATH/bin"
+    - export GOPROXY=direct
+    - export Branch_Name="$CI_COMMIT_REF_NAME"
+    - export Serivce_Name="viola"
+    - export Build_Path="/home/gitlab-runner/tmp_build"
 
 copy_dir:
-  stage: init
-  script:
-    - gmake copy_dir
+    stage: init
+    script:
+    - make copy_dir
+    - ln -sf $GOPATH/src/hcc/pb ../pb
+    - ln -sf $GOPATH/src/hcc/hcc_errors ../hcc_errors
 
 unit_tests:
   stage: test
   script:
-    - gmake test
+    - make test
 
 race_detector:
   stage: test
   script:
-    - gmake race
+    - make race
 
 code_coverage:
   stage: test
   script:
-    - gmake coverage
+    - make coverage
 #  only:
 #  - master
 
 go_report:
   stage: test
   script:
-    - gmake goreport
+    - make goreport
 #  only:
 #  - master
 
@@ -47,11 +52,7 @@ go_report:
 build:
   stage: build
   script:
-    - gmake
-    # - sudo /usr/sbin/service viola stop
-    # - sudo cp $PWD/viola /bin/viola
-    # - sudo chmod 755 /bin/viola
-    # - sudo /usr/sbin/service viola start
-    - echo "Finished"
-#  only:
-#  - master
+    - make
+    - if [[ ! -d "$Build_Path/$Serivce_Name/$Branch_Name" ]]; then mkdir -p $Build_Path/$Serivce_Name/$Branch_Name;fi
+    - cp -f $PWD/$Serivce_Name $Build_Path/$Serivce_Name/$Branch_Name/
+    - echo "Build Complete"
