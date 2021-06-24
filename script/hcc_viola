@@ -1,0 +1,93 @@
+#! /bin/sh
+
+### BEGIN INIT INFO
+# Provides:          hcc_viola
+# Required-Start:    $remote_fs $syslog
+# Required-Stop:     $remote_fs $syslog
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Viola controler
+# Description:       Viola controler
+### END INIT INFO
+# Location = /etc/init.d/hcc_init
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/etc/viola
+
+. /lib/lsb/init-functions
+
+
+
+d_start() {
+
+HOSTIP=$(cat $(ls /var/lib/dhclient/ | grep eth0) | grep -m 1 'routers '|awk '{print $3}' | tr -d ';')
+echo -e "[http]\n\
+port 7000\n\
+\n\
+[network]\n\
+interface_name eth0\n\
+\n\
+[rabbitmq]\n\
+rabbitmq_id admin\n\
+rabbitmq_password qwe1212!Q\n\
+rabbitmq_address $HOSTIP\n\
+rabbitmq_port 5672\n\
+\n\
+[influxdb]\n\
+influxdb_ip $HOSTIP\n\
+influxdb_port 8086" > /etc/hcc/viola/viola.conf
+#su root -c "/etc/hcc/viola/viola"
+#exec /etc/hcc/viola/viola &
+#/etc/hcc/viola/viola &
+su root -c "/usr/bin/nohup /etc/hcc/viola/viola >/dev/null 2>&1 &"
+STATUS=$?
+    return ${STATUS:-0}
+}
+
+d_restart() {
+    ret=$?
+    return $ret
+}
+
+#
+# Function that stops the daemon/service.
+#
+d_stop() {
+	    ret=$?
+    return $ret
+}
+
+#
+# Function that prints if Hcloud is started or not
+#
+d_status() {
+    ret=$?
+    return $ret
+}
+
+    case "$1" in
+	start)
+	    log_daemon_msg "Starting $DESC"
+	    d_start || log_end_msg 1
+	    log_end_msg 0
+	    ;;
+	stop)
+	    log_daemon_msg "Stopping $DESC"
+	    d_stop || log_end_msg 1
+	    log_end_msg 0
+	    ;;
+	status)
+	    log_daemon_msg "$DESC status"
+	    d_status
+	    log_end_msg 0
+	    ;;
+	restart)
+	    log_daemon_msg "Restart $DESC"
+	    d_restart || log_end_msg 1
+	    log_end_msg 0
+	    ;;
+	*)
+	    log_success_msg "Usage: $SCRIPTNAME {start|stop|restart|status}"
+	    exit 1
+	    ;;
+    esac
+
+exit 0

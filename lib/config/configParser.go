@@ -2,6 +2,8 @@ package config
 
 import (
 	"hcc/viola/lib/logger"
+	"os/exec"
+	"strings"
 
 	"github.com/Terry-Mao/goconf"
 )
@@ -9,6 +11,7 @@ import (
 var conf = goconf.New()
 var config = violaConfig{}
 var err error
+var MasterAddr string
 
 func parseHTTP() {
 	config.HTTPConfig = conf.Get("http")
@@ -18,6 +21,25 @@ func parseHTTP() {
 
 	HTTP = http{}
 	HTTP.Port, err = config.HTTPConfig.Int("port")
+	if err != nil {
+		logger.Logger.Panicln(err)
+	}
+}
+
+func parseInfluxDB() {
+	config.InfluxDBConfig = conf.Get("influxdb")
+	if config.InfluxDBConfig == nil {
+		logger.Logger.Panicln("no influxdb section")
+	}
+
+	InfluxDB = influxdb{}
+	// InfluxDB.IP, err = config.InfluxDBConfig.String("influxdb_ip")
+	// if err != nil {
+	// 	logger.Logger.Panicln(err)
+	// }
+	InfluxDB.IP = MasterAddr
+
+	InfluxDB.Port, err = config.InfluxDBConfig.String("influxdb_port")
 	if err != nil {
 		logger.Logger.Panicln(err)
 	}
@@ -40,32 +62,41 @@ func parseRabbitMQ() {
 		logger.Logger.Panicln(err)
 	}
 
-	RabbitMQ.Address, err = config.RabbitMQConfig.String("rabbitmq_address")
-	if err != nil {
-		logger.Logger.Panicln(err)
-	}
+	// RabbitMQ.Address, err = config.RabbitMQConfig.String("rabbitmq_address")
+	// if err != nil {
+	// 	logger.Logger.Panicln(err)
+	// }
+	RabbitMQ.Address = MasterAddr
 
 	RabbitMQ.Port, err = config.RabbitMQConfig.Int("rabbitmq_port")
 	if err != nil {
 		logger.Logger.Panicln(err)
 	}
+
+	logger.Logger.Println("RabbitMQ [ID: ", RabbitMQ.ID, ", Pass: ", RabbitMQ.Password, ", Addr: ", RabbitMQ.Address, "/", RabbitMQ.Port, "]")
+
 }
 
-func parseViola() {
-	config.ViolaConfig = conf.Get("viola")
-	if config.ViolaConfig == nil {
-		logger.Logger.Panicln("no viola section")
+func parseMasterAddr() {
+	config.NetworkConfig = conf.Get("network")
+	if config.NetworkConfig == nil {
+		logger.Logger.Panicln("no network section")
 	}
 
-	Viola = viola{}
-	Viola.NodeAddRetryCount, err = config.ViolaConfig.Int("viola_node_add_retry_count")
+	NetworkConfig.InterfaceName, err = config.NetworkConfig.String("interface_name")
 	if err != nil {
 		logger.Logger.Panicln(err)
 	}
 
-	Viola.NodeAddRetryWaitSec, err = config.ViolaConfig.Int("viola_node_add_retry_wait_sec")
+	cmdString := "cat /var/lib/dhclient/$(ls /var/lib/dhclient/ | grep " + NetworkConfig.InterfaceName + " ) | grep -m 1 'routers '|awk '{print $3}' | tr -d ';'"
+	// cat dhclient-eth0.leases | grep -m 1 'routers '|awk '{print $3}' | tr -d ';'
+	cmd := exec.Command("bash", "-c", cmdString)
+	cmdout, err := cmd.CombinedOutput()
 	if err != nil {
-		logger.Logger.Panicln(err)
+		logger.Logger.Println("Node status error occurred!!")
+	} else {
+		MasterAddr = strings.TrimSpace(string(cmdout))
+		// logger.Logger.Println("Master Node Addr ", MasterAddr, reflect.TypeOf(MasterAddr))
 	}
 }
 
@@ -74,8 +105,8 @@ func Parser() {
 	if err = conf.Parse(configLocation); err != nil {
 		logger.Logger.Panicln(err)
 	}
-
+	parseMasterAddr()
 	parseHTTP()
 	parseRabbitMQ()
-	parseViola()
+	parseInfluxDB()
 }

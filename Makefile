@@ -13,7 +13,6 @@ copy_dir: ## Copy project folder to GOPATH
 
 lint_dep: ## Get the dependencies for golint
 	@$(GOROOT)/bin/go get -u golang.org/x/lint/golint
-	@$(GOROOT)/bin/go install golang.org/x/lint/golint
 
 lint: ## Lint the files
 	@$(GOPATH)/bin/golint -set_exit_status ${PKG_LIST}
@@ -35,8 +34,8 @@ gofmt: ## Run gofmt for go files
 	@find -name '*.go' -exec $(GOROOT)/bin/gofmt -s -w {} \;
 
 goreport_dep: ## Get the dependencies for goreport
+	@make lint_dep
 	@$(GOROOT)/bin/go get -u github.com/gojp/goreportcard/cmd/goreportcard-cli
-	@$(GOROOT)/bin/go install github.com/gojp/goreportcard/cmd/goreportcard-cli
 	@rm -f install.sh
 
 goreport: goreport_dep ## Make goreport
@@ -60,4 +59,3 @@ clean: ## Remove previous build
 
 help: ## Display this help screen
 	@grep -h -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
-

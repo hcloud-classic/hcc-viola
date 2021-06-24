@@ -2,132 +2,161 @@ package controlcli
 
 import (
 	"errors"
+	"fmt"
+	"hcc/viola/lib/config"
 	"hcc/viola/lib/logger"
+	"hcc/viola/model"
+	"io/ioutil"
 	"os"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
+	"time"
 )
 
-//AtomicAction : action parse struct
+//AtomicAction : Parsing tjuhe
 type AtomicAction struct {
 	area        string
 	class       string
 	scope       []string
-	rangeoption bool
 	iprange     []string
+	rangeoption bool
+	publisher   string
+	receiver    string
+	nodeList    []string
 }
 
 // var actiontype = []string{"area", "class", "scope"}
 var tokenaction AtomicAction
-var nodemap map[string]string
+
+// var nodemap map[string]string
+var nodemap = make(map[string]string)
 
 // HccCli : Hcc integration Command line interface
-func HccCli(action string, iprange string) error {
+func HccCli(parseaction model.Control) (bool, interface{}) {
 	clearAction()
-	logger.Logger.Println("Receive : ", action)
-	err := ActionParser(action, iprange)
-	if err != nil {
-		return errors.New("ActionParcer Faild")
-	}
+	ActionClassify(parseaction)
+	//Debug Option
+	// logger.Logger.Println("Receive : ", parseaction)
 
 	logger.Logger.Println(tokenaction.area, tokenaction.class, tokenaction.scope)
-	iskerrighed, _ := kerrighedContainerVerify()
-	//if err != nil {
-	//	return false, err
-	//}
+	ishcccluster, err := hccContainerVerify()
+	if err != nil {
+		return false, errors.New("ActionParcer Faild")
+	}
+	istelegrafset, checkerr := telegrafSetting(parseaction)
+	if !istelegrafset {
+		logger.Logger.Println(checkerr)
+	}
 
-	if iskerrighed {
+	if ishcccluster {
 		switch tokenaction.area {
 		case "nodes":
-			err := cmdNodes(tokenaction.class, tokenaction.scope)
-			if err != nil {
-				return err
-			}
-
-			return nil
+			return cmdNodes()
 		case "cluster":
 			cmdCluster(tokenaction.class, tokenaction.scope)
-			break
 		default:
 			logger.Logger.Println("Please choose the area {nodes or cluster}")
 		}
 	} else {
-		return errors.New("please proceed in Kerrighed container")
+		return false, errors.New("Please Continue in Hcloud Container")
 	}
 
-	return errors.New("HccCli failed")
+	return false, nil
 }
 
-// ActionParser : Parcing Action
-func ActionParser(action string, iprange string) interface{} {
-	//Action parsing
-	tmpstr := strings.Split(action, " ")
-	tmplength := len(tmpstr)
-	// logger.Logger.Println("action : ", action, "\n", "Length =>", tmplength, "++++++", tmpstr[1])
+func normalActionparser() interface{} {
+	return nil
+}
 
-	tokenaction.area = tmpstr[1]
-	if tmplength <= 3 && tmplength >= 2 {
-		tokenaction.class = "status"
-		// tokenaction.scope = append(tokenaction.scope, "0")
-	} else if tmplength < 2 {
-		return errors.New("invalid Hcc command line")
-	} else {
-		tokenaction.class = tmpstr[2]
-		// tokenaction.scope = append(tokenaction.scope, tmpstr[3])
+func isipv4(host string) bool {
+	parts := strings.Split(host, ".")
+
+	if len(parts) < 4 {
+		return false
 	}
 
-	hasOption := strings.Contains(action, "-n")
-	hasRangeOption := strings.Contains(action, ":")
-	logger.Logger.Println("hasOption=> ", hasOption, "] hasRangeOption => ", hasRangeOption)
-	//deliIndex : delimeter index
-	var deliIndex = 0
-	var endOfIndex = 0
-	if hasOption {
-		if hasRangeOption {
-			tokenaction.rangeoption = hasRangeOption
-			for i, tmpact := range tmpstr {
-				if tmpact == "-n" {
-					deliIndex = i
-				}
-				endOfIndex++
+	for _, x := range parts {
+		if i, err := strconv.Atoi(x); err == nil {
+			if i < 0 || i > 255 {
+				return false
 			}
-
-			tokenaction.scope = append(tokenaction.scope, tmpstr[deliIndex+1])
 		} else {
-			for i, tmpact := range tmpstr {
-				if tmpact == "-n" {
-					deliIndex = i
-				}
-				endOfIndex++
-			}
-
-			for t := deliIndex + 1; t < endOfIndex; t++ {
-				tokenaction.scope = append(tokenaction.scope, tmpstr[t])
-			}
-
+			return false
 		}
+
+	}
+	return true
+}
+
+func hccActionparser(parseaction model.HccAction) interface{} {
+	var tempNodeIP string
+
+	tokenaction.area = parseaction.ActionArea
+	tokenaction.class = parseaction.ActionClass
+	//ip range parse
+	splitip := strings.Split(parseaction.HccIPRange, " ")
+	if isipv4(splitip[0]) && isipv4(splitip[1]) {
+
+		startIP := strings.Split(splitip[0], ".")
+		endIP := strings.Split(splitip[1], ".")
+		loopStart, _ := strconv.Atoi(startIP[3])
+		loopEnd, _ := strconv.Atoi(endIP[3])
+		for i := loopStart; i < loopEnd; i++ {
+			tempNodeIP = startIP[0] + "." + startIP[1] + "." + startIP[2] + "." + strconv.Itoa(i)
+			tokenaction.nodeList = append(tokenaction.nodeList, tempNodeIP)
+		}
+
+		tokenaction.iprange = append(tokenaction.iprange, splitip[0])
+		tokenaction.iprange = append(tokenaction.iprange, splitip[1])
 	} else {
-		tokenaction.scope = append(tokenaction.scope, "0")
-	}
-	//ip parsing
-
-	if len(iprange) > 0 {
-		iptmp := strings.Split(iprange, " ")
-		tokenaction.iprange = append(tokenaction.iprange, iptmp[1])
-		tokenaction.iprange = append(tokenaction.iprange, iptmp[2])
-		//Debug For iprange
-		// for i, words := range iptmp {
-		// 	logger.Logger.Println(i, "=>", words)
-		// }
+		return errors.New("[hccActionparser] Invaild Ip range, Failed parse iprange")
 	}
 
+	//Action effective scope parsing
+	if parseaction.ActionScope != "" {
+		if strings.Contains(parseaction.ActionScope, ":") {
+			tokenaction.rangeoption = true
+		}
+		re := regexp.MustCompile("[0-9]+")
+		extractscope := re.FindAllString(parseaction.ActionScope, -1)
+		tokenaction.scope = extractscope
+
+	} else {
+		return errors.New("[hccActionparser] Invaild scope, Failed parse scope")
+	}
 	//Debug : tokenaction Structure
-	logger.Logger.Println("area =>", tokenaction.area)
-	logger.Logger.Println("class => ", tokenaction.class)
-	logger.Logger.Println("scope => ", tokenaction.scope)
-	logger.Logger.Println("iprange => ", tokenaction.iprange)
-	logger.Logger.Println("rangeoption => ", tokenaction.rangeoption)
+	// logger.Logger.Println("area =>", tokenaction.area)
+	// logger.Logger.Println("class => ", tokenaction.class)
+	// logger.Logger.Println("scope => ", tokenaction.scope)
+	// logger.Logger.Println("iprange => ", tokenaction.iprange)
+
+	return nil
+}
+
+// ActionClassify : Parcing Action
+func ActionClassify(parsingmsg model.Control) interface{} {
+	logger.Logger.Println("Receive : ", parsingmsg)
+	tokenaction.publisher = parsingmsg.Publisher
+	tokenaction.receiver = parsingmsg.Receiver
+	//Classify Action Type
+	switch parsingmsg.Control.ActionType {
+	case "hcc":
+		err := hccActionparser(parsingmsg.Control.HccType)
+		if err != nil {
+			errstr := fmt.Sprintf("%v", err)
+			return errors.New("[Hcc Action Parsing] Can't parse hcc action (" + errstr + ")")
+		}
+	case "normal":
+		err := normalActionparser()
+		if err != nil {
+			errstr := fmt.Sprintf("%v", err)
+			return errors.New("[Normal Action Parsing] Can't parse normal action (" + errstr + ")")
+		}
+	default:
+		return errors.New("[Parsing Error]Please Correct Action type")
+	}
 
 	return nil
 }
@@ -136,46 +165,47 @@ func clearAction() {
 	tokenaction.area = ""
 	tokenaction.class = ""
 	tokenaction.scope = nil
-	tokenaction.rangeoption = false
 	tokenaction.iprange = nil
+	tokenaction.rangeoption = false
 }
 
-func cmdNodes(actclass string, actscope []string) error {
-	switch actclass {
-	case "status":
-		err := nodeStatus(actscope[0])
-		if err != nil {
-			return err
-		}
+func cmdNodes() (bool, interface{}) {
 
-		return nil
+	switch tokenaction.class {
+	case "status":
+		err, verbosenode := nodeStatus(tokenaction.scope[0])
+		if err != false {
+			return true, nil
+		}
+		return false, verbosenode
 	case "add":
 		if checkNFS() {
 			logger.Logger.Println("Leader Node NFS Service On")
 		} else {
-			restartNFS()
+			restartService("nfs-common")
 			logger.Logger.Println("Leader Node NFS Service restart")
 		}
+		//For nodeMap renewal
+		nodeStatus("0")
+		logger.Logger.Println("Telegraf Service Check")
+		for _, args := range tokenaction.nodeList {
+			fmt.Println(args)
+			result, err := ComputeTelegrafRestart(args)
+			if err != nil {
+				logger.Logger.Println("Result : ", result, " Error : ", err.Error())
+			}
 
-		// For nodeMap renewal
-		err := nodeStatus("0")
-		if err != nil {
-			return err
+		}
+		if nAvailableNodeAdd() {
+			return true, errors.New("All Nodes is Preparing and online")
 		}
 
-		if nAvailableNodeAdd(actscope[0]) {
-			logger.Logger.Println("all nodes are preparing with online")
-			return nil
-		}
-
-		return errors.New("all nodes are not preparing with online")
+		return false, errors.New("Some Nodes is Not Preparing")
 	case "del":
-		// TODO : Add del operation
 	default:
-		return errors.New("please choose operation {status, add, del}")
+		return false, errors.New("Please Choose Operation {status, add, del}")
 	}
-
-	return errors.New("not available command")
+	return false, errors.New("Not Available Command")
 }
 
 func cmdCluster(actclass string, actscope []string) {
@@ -183,13 +213,15 @@ func cmdCluster(actclass string, actscope []string) {
 }
 
 func addNodes(actscope string) interface{} {
-	cmd := exec.Command("krgadm", "nodes", "add", "-n", actscope)
+	cmd := exec.Command("hccadm", "nodes", "add", "-n", actscope)
 	result, err := cmd.CombinedOutput()
 	if err != nil {
 		logger.Logger.Println("Node Can't add the Num of [", actscope, "] Node")
 		return err
 	}
-	return result
+	nodemap[actscope] = "online"
+
+	return string(result)
 }
 
 func checkNFS() bool {
@@ -206,78 +238,79 @@ func checkNFS() bool {
 	return false
 }
 
-func restartNFS() {
-	cmd := exec.Command("service", "nfs-common", "restart")
-	_, err := cmd.CombinedOutput()
-	if err != nil {
-		logger.Logger.Println("NFS Service Can't start")
-
-	}
-
-}
-
 // @ N node nodeStatus index == n
 // @ all node status index == 0
-func nodeStatus(index string) error {
-	cmd := exec.Command("krgadm", "nodes", "status")
+func nodeStatus(index string) (bool, interface{}) {
+	cmd := exec.Command("hccadm", "nodes", "status")
 	result, err := cmd.CombinedOutput()
 	if err != nil {
-		errMsg := "error occurred while running krgadm command"
-		logger.Logger.Println(errMsg)
-		return errors.New(errMsg)
+		logger.Logger.Println("Node status error occurred!!")
 	}
 
 	if index == "0" {
 		logger.Logger.Println("HCC All Nodes Status \nIP  status\n", string(result))
 		nodeStatusRegister(string(result))
-		return nil
-	}
 
+		return true, string(result)
+	}
 	if nodeConnectCheck(index) {
 		tmpstr := strings.Split(string(result), "\n")
 		for _, words := range tmpstr {
-			retoken := strings.Split(words, ":")
+			retoken := strings.Split(string(words), ":")
 			if string(words[0]) == index {
 				logger.Logger.Println(index, " th node status = > ", retoken[1])
-				return nil
+				return true, string(retoken[1])
 			}
 		}
 	} else {
 		result := "[" + index + "] th Node Is Not in Cluster Area"
-		return errors.New(result)
+		return false, errors.New(result)
 	}
 
-	return errors.New("nodeStatus failed")
+	return false, nil
 }
 
 func nodeStatusRegister(status string) {
-	nodemap = make(map[string]string)
 	tmpstr := strings.Split(status, "\n")
 	for _, words := range tmpstr {
-		if strings.Contains(words, ":") {
-			retoken := strings.Split(words, ":")
-			// if string(words[0]) != "1" {}
+		if strings.Contains(string(words), ":") {
+			retoken := strings.Split(string(words), ":")
+
 			nodemap[string(words[0])] = retoken[1]
 
-			logger.Logger.Println("words => ", string(words[0]), "retoken => ", retoken[1])
-			logger.Logger.Println("register => ", nodemap[string(words[0])])
+			// logger.Logger.Println("words => ", string(words[0]), "retoken => ", retoken[1])
+			// logger.Logger.Println("register => ", nodemap[string(words[0])])
 
 		}
 	}
 }
 
 func isAllNodeOnline(startRange int, endRange int) bool {
-	for i := startRange; i < endRange; i++ {
-		if nodemap[string(i)] == "present" {
-			logger.Logger.Println(nodemap[string(i)])
+	var needednode = endRange - startRange + 1
+	var count = 0
+	for i := startRange; i <= endRange; i++ {
+		if nodemap[strconv.Itoa(i)] == "present" {
+			//For Debug
+			// logger.Logger.Println("i : [", i, "] => ", nodemap[strconv.Itoa(i)])
 			return false
 		}
+		if nodemap[strconv.Itoa(i)] == "online" {
+			//For Debug
+			// logger.Logger.Println("i : [", i, "] => ", nodemap[strconv.Itoa(i)])
+			count++
+		}
 	}
-	return true
+	logger.Logger.Println("needednode : ", needednode, " || count : ", count)
+	if needednode == count {
+		return true
+	}
+
+	return false
 }
 
 func nodeConnectCheck(actscope string) bool {
 	for key := range nodemap {
+		//For Debug
 		// logger.Logger.Println(key, val)
 		if key == actscope {
 			return true
@@ -286,98 +319,114 @@ func nodeConnectCheck(actscope string) bool {
 	return false
 }
 
-func checkAllNodeOnline(startRange int, endRange int, subnet []string) bool {
-	retry := 0
-
-	for !isAllNodeOnline(startRange, endRange) {
-		logger.Logger.Println("Available Node Add retry : [", retry+1, "/10]")
-		if retry > 10 {
-			return false
-		}
-		for i := startRange; i < endRange; i++ {
-			subnet[3] = nodemap[string(i)]
-			if nodemap[string(i)] == "present" && verifyNPort(strings.Join(subnet, "."), "2222") {
-				addNodes(string(i))
-			}
-		}
-		retry++
+func rangeAtoiParse(start string, end string) (int, int, error) {
+	startInt, err := strconv.Atoi(start)
+	if err != nil {
+		return 0, 0, errors.New("failed to parse start")
 	}
-	return true
+
+	endInt, err := strconv.Atoi(end)
+	if err != nil {
+		return 0, 0, errors.New("failed to parse end")
+	}
+
+	return startInt, endInt, nil
 }
 
 // nAvailableNodeAdd : check
-func nAvailableNodeAdd(actscope string) bool {
-	// logger.Logger.Println("qwe => ", nodemap["1"])
-	logger.Logger.Println("Now actscope=>", actscope)
-	subnet := strings.Split(tokenaction.iprange[0], ".")
+func nAvailableNodeAdd() bool {
+	// 0 =>  all node add
+	//  x:y =>  x~y nodes add
+
+	subnetstart := strings.Split(tokenaction.iprange[0], ".")
+	subnetend := strings.Split(tokenaction.iprange[1], ".")
+	//N number of  nodes add
 	if tokenaction.rangeoption {
-		parseScope := strings.Split(actscope, ":")
-		startRange, err := strconv.Atoi(parseScope[0])
+		startRange, endRange, err := rangeAtoiParse(tokenaction.scope[0], tokenaction.scope[1])
 		if err != nil {
-			logger.Logger.Println("Can't parse available node")
+			logger.Logger.Println("Available node Can't parse")
 			return false
 		}
-		endRange, err := strconv.Atoi(parseScope[1])
-		if err != nil {
-			logger.Logger.Println("Can't parse available node")
-			return false
-		}
+
 		//Compute node Is available?
-		return checkAllNodeOnline(startRange, endRange, subnet)
-	}
+		retry := 0
+		logger.Logger.Println("startRange : ", startRange, " | endRange  ", endRange, " | subnet : ", subnetstart)
 
-	if nodeConnectCheck(actscope) && actscope != "0" {
-		subnet[3] = actscope
-		if nodemap[actscope] == "present" && verifyNPort(strings.Join(subnet, "."), "2222") {
-			result := addNodes(actscope)
-			logger.Logger.Println("Action Result : ", result)
-			return true
-
+		for !isAllNodeOnline(startRange, endRange) {
+			logger.Logger.Println("Available Node Add retry : [", retry+1, "/100]")
+			nodeStatus("0")
+			if retry > 100 {
+				return false
+			}
+			for i := startRange; i <= endRange; i++ {
+				subnetstart[3] = strconv.Itoa(i)
+				logger.Logger.Println(nodeVerifyAdd(strconv.Itoa(i), subnetstart))
+			}
+			time.Sleep(4 * time.Second)
+			retry++
 		}
-	} else {
-		start := strings.Split(tokenaction.iprange[0], ".")
-		end := strings.Split(tokenaction.iprange[1], ".")
-		logger.Logger.Println(start, "   ", end)
-		startip, err := strconv.Atoi(start[3])
+		return true
+	}
+	// Specific the number node add
+	if nodeConnectCheck(tokenaction.scope[0]) && tokenaction.scope[0] != "0" {
+		retry := 0
+		specificnode, err := strconv.Atoi(tokenaction.scope[0])
 		if err != nil {
-			logger.Logger.Println("Can't parse IP range")
 			return false
 		}
-		endip, err := strconv.Atoi(end[3])
-		if err != nil {
-			logger.Logger.Println("Can't parse IP range")
-			return false
+		for !isAllNodeOnline(specificnode, specificnode) {
+			if retry > 100 {
+				return false
+			}
+			logger.Logger.Println("Available Node Add retry : [", retry+1, "/100]")
+			nodeStatus("0")
+			subnetstart[3] = tokenaction.scope[0]
+			logger.Logger.Println(nodeVerifyAdd(tokenaction.scope[0], subnetstart))
+			retry++
+			time.Sleep(4 * time.Second)
 		}
-		logger.Logger.Println(startip, "   ", endip)
-
-		return checkAllNodeOnline(startip, endip, subnet)
+		return true
 	}
 
-	return false
+	startip, endip, err := rangeAtoiParse(subnetstart[3], subnetend[3])
+	if err != nil {
+		logger.Logger.Println("Available node Can't parse")
+		return false
+	}
 
-	//Debug For nodeMap
+	retry := 0
+	for !isAllNodeOnline(startip, endip) {
+		if retry > 100 {
+			return false
+		}
+		logger.Logger.Println("Available Node Add retry : [", retry+1, "/100]")
+		nodeStatus("0")
+		for i := startip; i <= endip; i++ {
+			subnetstart[3] = strconv.Itoa(i)
+			logger.Logger.Println(nodeVerifyAdd(strconv.Itoa(i), subnetstart))
+		}
+		retry++
+		time.Sleep(4 * time.Second)
+	}
+	// Debug For nodeMap
 	// for key, val := range nodemap {
-	// 	if val == "present" && key != "1" {
-	// 		return false
-	// 	}
+	// 	// if val == "present" && key != "1" {
+	// 	// 	return false
+	// 	// }
 	// 	logger.Logger.Println("Codex => ", key, val)
 	// }
-	//
+	// range option is zero, Add all nodes
+	return true
 }
 
-func printOutput(outs string) {
-	if len(outs) > 0 {
-		logger.Logger.Printf("==> Output: %s\n", outs)
-	}
-}
+func hccContainerVerify() (bool, error) {
 
-func kerrighedContainerVerify() (bool, error) {
 	if fileExists("/proc/nodes/self/nodeid") {
-		logger.Logger.Println("Kerrighed Container load")
+		logger.Logger.Println("Hcloud Container load")
 		return true, nil
 	}
 
-	return false, errors.New("Not Kerrighed Container")
+	return false, errors.New("Not Hcloud Container")
 }
 
 func extractToken(srcstr string, delimiter string, index int) string {
@@ -393,16 +442,6 @@ func fileExists(filename string) bool {
 	return !info.IsDir()
 }
 
-// cmd := exec.Command("ls", "-al")
-// result, err := cmd.CombinedOutput()
-// qwe := strings.Split(string(result), "\n")
-// for i, words := range qwe {
-// 	logger.Logger.Println(i, "= > ", words)
-// }
-// if err != nil {
-// 	logger.Logger.Println("Error occurred!!")
-// }
-
 func verifyNPort(ip string, port string) bool {
 	cmd := exec.Command("nmap", ip)
 	result, err := cmd.CombinedOutput()
@@ -411,14 +450,105 @@ func verifyNPort(ip string, port string) bool {
 	}
 	//compute on?
 	if strings.Contains(string(result), port) {
+		logger.Logger.Println(ip, " : ", port, "Connect")
+
 		return true
 	}
 
 	return false
 }
 
-// NodeInit :qwe
-// func NodeInit() {
-// 	nodemap = make(map[string]string)
-// 	// nodemap = map[string]string{}
-// }
+func nodeVerifyAdd(mapnum string, subnetstart []string) interface{} {
+	if nodemap[mapnum] == "present" && verifyNPort(strings.Join(subnetstart, "."), "2222") {
+		result := addNodes(mapnum)
+		//For Debug
+		// logger.Logger.Println("Action Result : ", result)
+		return result
+	}
+	return "Faild Add Node" + mapnum
+}
+
+//TelegrafCheck :telegraf config
+func TelegrafCheck() (bool, interface{}) {
+	if !fileExists(telegrafDir + "/telegraf.conf") {
+		return false, errors.New("Telegraf setting is failed, Please check " + telegrafDir + "/telegraf.conf")
+	}
+	return true, "Telegraf Config Exist!\n"
+}
+
+func telegrafSetting(parseaction model.Control) (bool, interface{}) {
+	var nodeList string
+	state, err := TelegrafCheck()
+	if !state {
+		strtmp := fmt.Sprintf("%v", err)
+		return false, errors.New(strtmp)
+	}
+	b, err := ioutil.ReadFile(telegrafDir + "/telegraf.conf") // just pass the file name
+	if err != nil {
+		fmt.Print(err)
+	}
+	r, _ := regexp.Compile(parseaction.Control.HccType.ServerUUID)
+	if r.MatchString(string(b)) {
+		return true, "Already setting complete\n"
+	}
+	//For Leader
+	leaderTelegrafconf := agent + outputsInfluxdb + cpuInfo + inputsDisk + netInfo + etcSet
+	leaderTelegrafconf = strings.Replace(leaderTelegrafconf, "SERVER_UUID", parseaction.Control.HccType.ServerUUID, -1)
+	leaderTelegrafconf = strings.Replace(leaderTelegrafconf, "INFLUX_DB_IP", config.InfluxDB.IP, -1)
+	leaderTelegrafconf = strings.Replace(leaderTelegrafconf, "PORT", config.InfluxDB.Port, -1)
+	err = ioutil.WriteFile(telegrafDir+"/telegraf.conf", []byte(leaderTelegrafconf), 644)
+	if err != nil {
+		return false, errors.New("failed to write to telegraf.conf file")
+	}
+
+	computeTelegrafconf := agent + outputsInfluxdb + ping
+	computeTelegrafconf = strings.Replace(computeTelegrafconf, "SERVER_UUID", parseaction.Control.HccType.ServerUUID, -1)
+	computeTelegrafconf = strings.Replace(computeTelegrafconf, "INFLUX_DB_IP", config.InfluxDB.IP, -1)
+	computeTelegrafconf = strings.Replace(computeTelegrafconf, "PORT", config.InfluxDB.Port, -1)
+
+	for i, args := range tokenaction.nodeList {
+		nodeList += "\"" + args + "\""
+		if i < len(tokenaction.nodeList)-1 {
+			nodeList += ", "
+		}
+	}
+	computeTelegrafconf = strings.Replace(computeTelegrafconf, "NODE_LIST", nodeList, -1)
+
+	err = ioutil.WriteFile(telegrafDir+"/telegraf_Compute.conf", []byte(computeTelegrafconf), 644)
+	if err != nil {
+		return false, errors.New("failed to write to telegraf_Compute.conf file")
+	}
+	restartService("telegraf")
+	return true, "Telegraf Setting is complete!!\n"
+}
+
+func restartService(servname string) {
+	cmd := exec.Command("service", servname, "restart")
+	_, err := cmd.CombinedOutput()
+	if err != nil {
+		logger.Logger.Println(servname + " Service Can't start")
+
+	}
+
+}
+
+func ComputeTelegrafRestart(ip string) (string, error) {
+	serviceCheck := "ssh -T root@" + ip + " -p 2222 \"pgrep telegraf\""
+	cmd := exec.Command("/bin/bash", "-c", serviceCheck)
+	result, err := cmd.CombinedOutput()
+	if err != nil || strings.TrimSuffix(string(result), "\n") == "" {
+		serviceRestart := "ssh -T root@" + ip + " -p 2222 \"service compute_telegraf restart\""
+		cmd = exec.Command("/bin/bash", "-c", serviceRestart)
+		result, err = cmd.CombinedOutput()
+		if err != nil {
+			logger.Logger.Println(ip + " Telegraf Service Can't start")
+
+			return "", err
+		}
+	} else {
+		logger.Logger.Println(ip + " Telegraf Service Already started")
+	}
+
+	return strings.TrimSuffix(string(result), "\n"), err
+
+}
